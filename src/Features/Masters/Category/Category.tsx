@@ -19,7 +19,7 @@ import {
   subCategoriesError,
   subCategoriesLoading,
 } from "./categorySlice";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AppDispatch } from "@/app/store";
 import {
   Form,
@@ -53,14 +53,23 @@ import Table from "@/components/table/Table";
 import { Columns } from "./Columns";
 import { GrPowerReset } from "react-icons/gr";
 import { BASE_URL } from "@/lib/constants";
+import ImageUploadModal from "@/Features/Products/Components/ImageUploadModal";
 
 type Inputs = {
   parentId: string;
   parentCategoryName: string;
   subcategoryName: string;
+  subCategoryImage : {
+    name:string,
+    url :string,
+    status: boolean ,
+    type:string
+  }
 };
 
 const Category = () => {
+      const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  
   const dispatch = useDispatch<AppDispatch>();
   const categoryList = useSelector(selectCategories);
   const subCategoryList = useSelector(selectSubCategories);
@@ -74,6 +83,13 @@ const Category = () => {
     !subCategoryList && dispatch(getSubCategories());
   }, [subCategoryList, dispatch]);
 
+  const imageSchema = z.object({
+      name: z.string().min(1, "Image name is required"),
+  url: z.string().url("Please provide a valid image URL"),
+  status: z.boolean().default(true),
+  type: z.string().min(1, "Image type is required"),
+  })
+
   const form = useForm<Inputs>({
     resolver: async (values, context, options) => {
       const schema = z.object({
@@ -85,6 +101,8 @@ const Category = () => {
           .string()
           .trim()
           .min(1, { message: "Category Name is required" }),
+
+          subCategoryImage : imageSchema
       });
       return zodResolver(schema)(values, context, options);
     },
@@ -92,6 +110,12 @@ const Category = () => {
       parentId: "",
       parentCategoryName: "",
       subcategoryName: "",
+       subCategoryImage : {
+    name: "",
+    url : "",
+    status: true ,
+    type: ""
+  }
     },
   });
 
@@ -120,6 +144,9 @@ const Category = () => {
     }
   };
 
+
+  console.log(form.getValues('subCategoryImage'));
+  
   return (
     <div className="flex flex-col gap-2">
       <Card className="w-full">
@@ -320,6 +347,43 @@ const Category = () => {
                     </FormItem>
                   )}
                 />
+
+
+
+
+
+
+
+
+ <FormField
+                  control={form.control}
+                  name="subCategoryImage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
+                        Image
+                      </FormLabel>
+                      <FormControl>
+                       <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsImageModalOpen(true)}
+                className="w-full"
+              >
+                Upload Image
+              </Button>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+
+
+
+
+
+
                 <div className="col-span-full">
                   <Button disabled={form.formState.isSubmitting} type="submit">
                     {form.formState.isSubmitting && (
@@ -331,6 +395,21 @@ const Category = () => {
               </div>
             </form>
           </Form>
+           <ImageUploadModal
+                isOpen={isImageModalOpen}
+                onClose={() => setIsImageModalOpen(false)}
+                onUpload={(images) => {
+                  if (images.length > 0) {
+                    const uploadedImage = images[0];
+                    form.setValue("subCategoryImage", {
+                      name: uploadedImage.img_name,
+                      url: uploadedImage.img_url,
+                      status: true,
+                      type: uploadedImage.img_type
+                    });
+                  }
+                }}
+              />
         </CardContent>
       </Card>
       <Table

@@ -73,7 +73,11 @@ import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import ReactQuill from "react-quill";
-import { getSubCategories, selectSubCategories } from "../Masters/Category/categorySlice";
+import {
+  getSubCategories,
+  selectSubCategories,
+} from "../Masters/Category/categorySlice";
+import { ProductType } from "../Masters/ProductType/types";
 
 // Types
 interface Variant {
@@ -101,12 +105,12 @@ interface VariantAttribute {
 }
 
 interface ProductFormData {
-  productType: string;
+  productTypeId: string;
   title: string;
   subheading: string;
   description: string;
   status: "draft" | "active";
-  subCategory : string
+  subCategory: string;
 }
 
 export const schema = z.object({
@@ -114,8 +118,8 @@ export const schema = z.object({
   subheading: z.string().min(1, { message: "Subheading is required" }),
   description: z.string().min(1, { message: "Description is required" }),
   status: z.string().min(1, { message: "Status is required" }),
-  productType: z.string().min(1, { message: "Product Type is required" }),
-  subCategory : z.string().min(1,{ message :"Subcategoy is required"})
+  productTypeId: z.string().min(1, { message: "Product Type is required" }),
+  subCategory: z.string().min(1, { message: "Subcategoy is required" }),
 });
 
 function stripHtml(html: string) {
@@ -142,10 +146,8 @@ export default function ProductForm() {
   ]);
 
   const quillModules = {
-    toolbar: [
-      [{ list: "ordered" }, { list: "bullet" }],
-    ],
-  }
+    toolbar: [[{ list: "ordered" }, { list: "bullet" }]],
+  };
 
   const [btnClick, setBtnClick] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
@@ -162,10 +164,9 @@ export default function ProductForm() {
   const dispatch = useAppDispatch();
   // const PRODUCT_TYPES = useAppSelector(selectProductsType);
   // console.log(PRODUCT_TYPES, 'product type');
-  
 
-  const [productType,setproductType] = useState<{}[]>([])
-  
+  const [productType, setproductType] = useState<ProductType[]>([]);
+
   const MOCK_ATTRIBUTES = useAppSelector(selectAttributeValues);
 
   const {
@@ -174,43 +175,39 @@ export default function ProductForm() {
     control,
     formState: { errors, isSubmitting },
     reset,
-    watch
+    watch,
   } = useForm<ProductFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       title: "",
       subheading: "",
       description: "",
-      productType: "",
+      productTypeId: "",
       status: "active",
-      subCategory : ""
-
+      subCategory: "",
     },
   });
 
-
-  console.log(control._formValues.subCategory)
+  console.log(control._formValues.subCategory);
   const subCategoryValue = watch("subCategory");
 
-  const getProductBySubCategory =  async() => {
-   await axios
+  const getProductBySubCategory = async () => {
+    await axios
       .get(BASE_URL + `/api/productAttributes/${subCategoryValue}`)
       .then((response) => {
         // Store the response as needed, e.g. in state
-console.log(response.data);
+        console.log(response.data);
 
-      setproductType(response.data)
+        setproductType(response.data);
       })
       .catch((error) => {
         console.error("Error fetching product attributes:", error);
       });
-
-  }
-
+  };
 
   useEffect(() => {
-  console.log(subCategoryValue);
-    getProductBySubCategory()
+    console.log(subCategoryValue);
+    getProductBySubCategory();
   }, [subCategoryValue]);
 
   useEffect(() => {
@@ -383,10 +380,9 @@ console.log(response.data);
 
     const defaultVariant = variants.find((v) => v.isDefault);
     const productData = {
-      productType: {
-        id: Number(formData.productType),
-      },
-      subcategoryId : formData.subCategory,
+      productTypeId: formData.productTypeId,
+
+      subcategoryId: formData.subCategory,
       name: "",
       subheading: formData.subheading,
       description: formData.description,
@@ -555,11 +551,10 @@ console.log(response.data);
 
   const subCategoryList = useAppSelector(selectSubCategories);
   console.log(subCategoryList);
-  
-  
-    useEffect(() => {
-      !subCategoryList && dispatch(getSubCategories());
-    }, [subCategoryList, dispatch]);
+
+  useEffect(() => {
+    !subCategoryList && dispatch(getSubCategories());
+  }, [subCategoryList, dispatch]);
   return (
     <div className="grid gap-6">
       {/* Main Product Information */}
@@ -576,7 +571,6 @@ console.log(response.data);
             <form
               onSubmit={handleSubmit(onSubmit)}
               className="space-y-8  mx-auto p-6"
-
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -586,8 +580,7 @@ console.log(response.data);
               {/* Product Type */}
               <div className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-6">
-
- <div className="space-y-2 ">
+                  <div className="space-y-2 ">
                     <Label
                       htmlFor="subCategory "
                       className="after:ml-0.5 after:text-red-500 after:content-['*']"
@@ -604,15 +597,19 @@ console.log(response.data);
                         >
                           <SelectTrigger>
                             {field.value
-                              ? `${subCategoryList?.find(
-                                (i) => `${i.categoryId}` == `${field.value}`
-                              )?.categoryName
-                              }`
+                              ? `${
+                                  subCategoryList?.find(
+                                    (i) => `${i.categoryId}` == `${field.value}`
+                                  )?.categoryName
+                                }`
                               : "Select product type"}
                           </SelectTrigger>
                           <SelectContent>
                             {subCategoryList?.map((type) => (
-                              <SelectItem key={type.id} value={`${type.categoryId}`}>
+                              <SelectItem
+                                key={type.id}
+                                value={`${type.categoryId}`}
+                              >
                                 {type.categoryName}
                               </SelectItem>
                             ))}
@@ -620,27 +617,12 @@ console.log(response.data);
                         </Select>
                       )}
                     />
-                    {errors.productType && (
+                    {errors.productTypeId && (
                       <p className="text-sm text-red-500">
-                        {errors.productType.message}
+                        {errors.productTypeId.message}
                       </p>
                     )}
                   </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
                   <div className="space-y-2 ">
                     <Label
@@ -650,24 +632,26 @@ console.log(response.data);
                       Product Type
                     </Label>
                     <Controller
-                      name="productType"
+                      name="productTypeId"
                       control={control}
                       render={({ field }) => (
                         <Select
                           onValueChange={field.onChange}
-                          value={`${field.value}`}
+                          value={field.value}
                         >
                           <SelectTrigger>
+                            {/* <SelectValue placeholder="Select product type" /> */}
                             {field.value
-                              ? `${productType?.find(
-                                (i) => `${i.id}` == `${field.value}`
-                              )?.productType
-                              }`
-                              : "Select product type"}
+                              ? `${
+                                  productType?.find(
+                                    (i) => `${i.id}` == `${field.value}`
+                                  )?.productType
+                                }`
+                              : "Select product type"}{" "}
                           </SelectTrigger>
                           <SelectContent>
                             {productType?.map((type) => (
-                              <SelectItem key={type.id} value={`${type.id}`}>
+                              <SelectItem key={type.id} value={type.id}>
                                 {type.productType}
                               </SelectItem>
                             ))}
@@ -675,9 +659,9 @@ console.log(response.data);
                         </Select>
                       )}
                     />
-                    {errors.productType && (
+                    {errors.productTypeId && (
                       <p className="text-sm text-red-500">
-                        {errors.productType.message}
+                        {errors.productTypeId.message}
                       </p>
                     )}
                   </div>
@@ -759,9 +743,7 @@ console.log(response.data);
                       //   style={{ minHeight: 120 }}
                       //   modules={quillModules}
                       // />
-                    <Input type="text" {...field} />
-                      
-                  
+                      <Input type="text" {...field} />
                     )}
                   />
                   {errors.description && (
@@ -829,8 +811,8 @@ console.log(response.data);
                                       {selectedAttributes.includes(
                                         attr?.keyName
                                       ) && (
-                                          <Check className="h-5 w-5 text-primary" />
-                                        )}
+                                        <Check className="h-5 w-5 text-primary" />
+                                      )}
                                     </div>
                                   </div>
                                 </CommandItem>
@@ -856,7 +838,7 @@ console.log(response.data);
                               );
                               const formattedAttributeName = attribute
                                 ? attribute.keyName.charAt(0).toUpperCase() +
-                                attribute.keyName.slice(1)
+                                  attribute.keyName.slice(1)
                                 : "";
 
                               return (
@@ -944,64 +926,110 @@ console.log(response.data);
 
                               {/* Selected Attributes */}
                               {selectedAttributes.map((attrId) => {
-                                const attribute = MOCK_ATTRIBUTES?.find((a) => a.keyName === attrId);
+                                const attribute = MOCK_ATTRIBUTES?.find(
+                                  (a) => a.keyName === attrId
+                                );
                                 return (
                                   <TableCell key={attrId}>
                                     {attribute?.keyName === "color" ? (
                                       <Select
-                                        value={`${variant.attributes[attribute?.keyName] || ""}`}
+                                        value={`${
+                                          variant.attributes[
+                                            attribute?.keyName
+                                          ] || ""
+                                        }`}
                                         onValueChange={(value) =>
                                           updateVariant(variant.id, {
                                             attributes: {
                                               ...variant.attributes,
-                                              [String(attribute?.keyName)]: value,
+                                              [String(attribute?.keyName)]:
+                                                value,
                                             },
                                           })
                                         }
                                       >
                                         <SelectTrigger
-                                          className={`w-[120px] truncate ${btnClick && !variant.attributes[attribute?.keyName]
-                                            ? "border-red-500 focus:border-red-500"
-                                            : ""
-                                            }`}
+                                          className={`w-[120px] truncate ${
+                                            btnClick &&
+                                            !variant.attributes[
+                                              attribute?.keyName
+                                            ]
+                                              ? "border-red-500 focus:border-red-500"
+                                              : ""
+                                          }`}
                                         >
                                           {attribute?.keyName === "color" &&
-                                            variant?.attributes[attribute?.keyName] ? (
+                                          variant?.attributes[
+                                            attribute?.keyName
+                                          ] ? (
                                             <div className="flex items-center gap-2 overflow-hidden">
-                                              {variant?.attributes[attribute?.keyName].includes("-") ? (
+                                              {variant?.attributes[
+                                                attribute?.keyName
+                                              ].includes("-") ? (
                                                 <>
                                                   <SquareIcon
-                                                    fill={`#${variant?.attributes[attribute?.keyName].split("-")[1]}`}
+                                                    fill={`#${
+                                                      variant?.attributes[
+                                                        attribute?.keyName
+                                                      ].split("-")[1]
+                                                    }`}
                                                     stroke="lightgrey"
                                                   />
                                                   <p
                                                     className="truncate overflow-hidden whitespace-nowrap"
-                                                    title={stripHtml(variant?.attributes[attribute?.keyName].split("-")[0])}
+                                                    title={stripHtml(
+                                                      variant?.attributes[
+                                                        attribute?.keyName
+                                                      ].split("-")[0]
+                                                    )}
                                                   >
-                                                    {stripHtml(variant?.attributes[attribute?.keyName].split("-")[0])}
+                                                    {stripHtml(
+                                                      variant?.attributes[
+                                                        attribute?.keyName
+                                                      ].split("-")[0]
+                                                    )}
                                                   </p>
                                                 </>
                                               ) : (
                                                 <p
                                                   className="truncate overflow-hidden whitespace-nowrap"
-                                                  title={stripHtml(variant?.attributes[attribute?.keyName])}
+                                                  title={stripHtml(
+                                                    variant?.attributes[
+                                                      attribute?.keyName
+                                                    ]
+                                                  )}
                                                 >
-                                                  {stripHtml(variant?.attributes[attribute?.keyName])}
+                                                  {stripHtml(
+                                                    variant?.attributes[
+                                                      attribute?.keyName
+                                                    ]
+                                                  )}
                                                 </p>
                                               )}
                                             </div>
                                           ) : (
-                                            <p className="truncate">Select {attribute?.keyName}</p>
+                                            <p className="truncate">
+                                              Select {attribute?.keyName}
+                                            </p>
                                           )}
                                         </SelectTrigger>
                                         <SelectContent>
                                           {attribute?.value?.map((option) => {
-                                            const COLOR_VALUE = option.split("-");
+                                            const COLOR_VALUE =
+                                              option.split("-");
                                             return (
-                                              <SelectItem key={option} value={option}>
+                                              <SelectItem
+                                                key={option}
+                                                value={option}
+                                              >
                                                 <div className="flex items-center gap-2">
-                                                  <SquareIcon fill={`#${COLOR_VALUE[1]}`} stroke="lightgrey" />
-                                                  <p>{stripHtml(COLOR_VALUE[0])}</p>
+                                                  <SquareIcon
+                                                    fill={`#${COLOR_VALUE[1]}`}
+                                                    stroke="lightgrey"
+                                                  />
+                                                  <p>
+                                                    {stripHtml(COLOR_VALUE[0])}
+                                                  </p>
                                                 </div>
                                               </SelectItem>
                                             );
@@ -1010,50 +1038,80 @@ console.log(response.data);
                                       </Select>
                                     ) : (
                                       <Select
-                                        value={`${variant.attributes[attribute?.keyName] || ""}`}
+                                        value={`${
+                                          variant.attributes[
+                                            attribute?.keyName
+                                          ] || ""
+                                        }`}
                                         onValueChange={(value) =>
                                           updateVariant(variant.id, {
                                             attributes: {
                                               ...variant.attributes,
-                                              [String(attribute?.keyName)]: value,
+                                              [String(attribute?.keyName)]:
+                                                value,
                                             },
                                           })
                                         }
                                       >
                                         <SelectTrigger
-                                          className={`w-[120px] truncate ${btnClick && !variant.attributes[attribute?.keyName]
-                                            ? "border-red-500 focus:border-red-500"
-                                            : ""
-                                            }`}
+                                          className={`w-[120px] truncate ${
+                                            btnClick &&
+                                            !variant.attributes[
+                                              attribute?.keyName
+                                            ]
+                                              ? "border-red-500 focus:border-red-500"
+                                              : ""
+                                          }`}
                                         >
                                           {attribute?.keyName &&
-                                            variant?.attributes[attribute?.keyName] ? (
+                                          variant?.attributes[
+                                            attribute?.keyName
+                                          ] ? (
                                             <div className="flex items-center gap-2 overflow-hidden">
                                               <p
                                                 className="truncate overflow-hidden whitespace-nowrap"
-                                                title={stripHtml(variant.attributes[attribute?.keyName].split("-")[0])}
+                                                title={stripHtml(
+                                                  variant.attributes[
+                                                    attribute?.keyName
+                                                  ].split("-")[0]
+                                                )}
                                               >
-                                                {stripHtml(variant.attributes[attribute?.keyName].split("-")[0])}
+                                                {stripHtml(
+                                                  variant.attributes[
+                                                    attribute?.keyName
+                                                  ].split("-")[0]
+                                                )}
                                               </p>
                                             </div>
                                           ) : (
-                                            <p className="truncate">Select {attribute?.keyName}</p>
+                                            <p className="truncate">
+                                              Select {attribute?.keyName}
+                                            </p>
                                           )}
                                         </SelectTrigger>
                                         <SelectContent>
                                           {attribute?.value?.map((option) => (
-                                            <SelectItem key={option} value={option}>
+                                            <SelectItem
+                                              key={option}
+                                              value={option}
+                                            >
                                               {stripHtml(option)}
                                             </SelectItem>
                                           ))}
                                         </SelectContent>
                                       </Select>
                                     )}
-                                    {btnClick && !variant.attributes[attribute?.keyName] && (
-                                      <p className="text-xs text-red-500 mt-1">
-                                        <span className="capitalize">{attribute?.keyName}</span> is required
-                                      </p>
-                                    )}
+                                    {btnClick &&
+                                      !variant.attributes[
+                                        attribute?.keyName
+                                      ] && (
+                                        <p className="text-xs text-red-500 mt-1">
+                                          <span className="capitalize">
+                                            {attribute?.keyName}
+                                          </span>{" "}
+                                          is required
+                                        </p>
+                                      )}
                                   </TableCell>
                                 );
                               })}
@@ -1078,12 +1136,13 @@ console.log(response.data);
                                     }
                                   }}
                                   placeholder="SKU-123"
-                                  className={`border ${btnClick && !variant.sku
-                                    ? "border-red-500 focus:border-red-500"
-                                    : skuErrors[variant.id]
+                                  className={`border ${
+                                    btnClick && !variant.sku
+                                      ? "border-red-500 focus:border-red-500"
+                                      : skuErrors[variant.id]
                                       ? "border-red-500 focus-visible:ring-red-500"
                                       : ""
-                                    }`}
+                                  }`}
                                 />
                                 {btnClick && !variant.sku?.trim() && (
                                   <p className="text-xs text-red-500 mt-1">
@@ -1101,10 +1160,10 @@ console.log(response.data);
                                     i.sku === variant.sku &&
                                     i.id !== variant.id
                                 ) && (
-                                    <p className="text-xs text-red-500 mt-1">
-                                      Sku Already Selected
-                                    </p>
-                                  )}
+                                  <p className="text-xs text-red-500 mt-1">
+                                    Sku Already Selected
+                                  </p>
+                                )}
                               </TableCell>
 
                               {/* Title */}
@@ -1116,10 +1175,11 @@ console.log(response.data);
                                       title: e.target.value,
                                     })
                                   }
-                                  className={`${btnClick && +variant.price <= 0
-                                    ? "border-red-500 focus:border-red-500"
-                                    : ""
-                                    }`}
+                                  className={`${
+                                    btnClick && +variant.price <= 0
+                                      ? "border-red-500 focus:border-red-500"
+                                      : ""
+                                  }`}
                                 />
                                 {btnClick && +variant.price <= 0 && (
                                   <p className="text-xs text-red-500 mt-1">
@@ -1138,10 +1198,11 @@ console.log(response.data);
                                       price: e.target.value,
                                     })
                                   }
-                                  className={`${btnClick && +variant.price <= 0
-                                    ? "border-red-500 focus:border-red-500"
-                                    : ""
-                                    }`}
+                                  className={`${
+                                    btnClick && +variant.price <= 0
+                                      ? "border-red-500 focus:border-red-500"
+                                      : ""
+                                  }`}
                                 />
                                 {btnClick &&
                                   (!variant.price || +variant.price <= 0 ? (
@@ -1165,15 +1226,16 @@ console.log(response.data);
                                       quantity: e.target.value,
                                     })
                                   }
-                                  className={`${btnClick && +variant.quantity <= 0
-                                    ? "border-red-500 focus:border-red-500"
-                                    : ""
-                                    }`}
+                                  className={`${
+                                    btnClick && +variant.quantity <= 0
+                                      ? "border-red-500 focus:border-red-500"
+                                      : ""
+                                  }`}
                                 />
 
                                 {btnClick &&
                                   (!variant.quantity ||
-                                    +variant.quantity <= 0 ? (
+                                  +variant.quantity <= 0 ? (
                                     <p className="text-xs text-red-500 mt-1">
                                       Quantity is Required
                                     </p>

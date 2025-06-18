@@ -362,6 +362,8 @@ export default function LandingPage() {
 
                  
                     
+
+                    
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -381,7 +383,7 @@ export default function LandingPage() {
             <FormLabel>Hero Image/GIF URL</FormLabel>
             <div className="flex gap-2">
               <FormControl>
-                <Input placeholder="Enter image or GIF URL" {...field} />
+                {/* <Input placeholder="Enter image or GIF URL" {...field} /> */}
               </FormControl>
               <Button
                 type="button"

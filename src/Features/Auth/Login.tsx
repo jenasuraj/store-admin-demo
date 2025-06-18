@@ -49,7 +49,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
       <Card className="w-full max-w-6xl overflow-hidden">
-        <div className="flex flex-col lg:flex-row">
+        <div className="flex flex-col lg:flex-row justify-center">
           <div className="flex w-full lg:w-1/2 flex-col items-center justify-center px-6 py-8">
             <div className="w-full max-w-sm space-y-6">
               <div className="flex justify-center items-center">
@@ -118,37 +118,7 @@ export default function LoginPage() {
               </form>
             </div>
           </div>
-          <div className="hidden lg:block lg:w-1/2 relative h-[600px] bg-[url('https://d1u4v6449fgzem.cloudfront.net/2020/03/The-Ecommerce-Business-Model-Explained.jpg')] bg-cover bg-center">
-            <div className="absolute inset-0 p-12 flex flex-col bg-black/60 justify-between text-white">
-              <div className="space-y-4">
-                <h2 className="text-3xl font-bold leading-tight">
-                  Manage your e-commerce business with ease
-                </h2>
-                <p className="text-primary-foreground/90">
-                  Access real-time analytics, inventory, and customer insights
-                  all in one place.
-                </p>
-              </div>
-              <div className="relative h-64">
-                <div className="absolute bottom-0 left-0 right-0 flex justify-center">
-                  <div className="grid grid-cols-3 gap-4 p-4 bg-primary-foreground/10 rounded-lg backdrop-blur">
-                    <div className="text-center p-3">
-                      <ShoppingBag className="w-6 h-6 mx-auto mb-2" />
-                      <div className="text-sm font-medium">Products</div>
-                    </div>
-                    <div className="text-center p-3">
-                      <BarChart3 className="w-6 h-6 mx-auto mb-2" />
-                      <div className="text-sm font-medium">Analytics</div>
-                    </div>
-                    <div className="text-center p-3">
-                      <TrendingUp className="w-6 h-6 mx-auto mb-2" />
-                      <div className="text-sm font-medium">Sales</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          
         </div>
       </Card>
     </div>

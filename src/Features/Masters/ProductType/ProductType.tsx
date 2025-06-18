@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AppDispatch } from "@/app/store";
 import {
   Form,
@@ -54,12 +54,25 @@ import {
   selectProductsType,
 } from "./productTypeSlice";
 import { BASE_URL } from "@/lib/constants";
+import ImageUploadModal from "@/Features/Products/Components/ImageUploadModal";
 
 type Inputs = {
   productType: string;
   categoryMappingId: string;
+  image : {
+    name : string,
+    url : string ,
+    status : boolean ,
+    type : string 
+  }
 };
 
+const imageSchema = z.object({
+  name: z.string().min(1, "Image name is required"),
+  url: z.string().url("Please provide a valid image URL"),
+  status: z.boolean().default(true),
+  type: z.string().min(1, "Image type is required"),
+});
 const schema = z.object({
   categoryMappingId: z
     .string()
@@ -69,9 +82,14 @@ const schema = z.object({
     .string()
     .trim()
     .min(1, { message: "Product type name is required" }),
+
+    image : imageSchema
+
 });
 
 const ProductType = () => {
+        const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  
   const dispatch = useDispatch<AppDispatch>();
 
   const tableData = useSelector(selectProductsType);
@@ -215,6 +233,44 @@ const ProductType = () => {
                     </FormItem>
                   )}
                 />
+
+
+
+
+  <FormField
+                  control={form.control}
+                  name="image"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
+                        Product Type
+                      </FormLabel>
+                      <FormControl>
+                         <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsImageModalOpen(true)}
+                className="w-full"
+              >
+                Upload Image
+              </Button>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+
+
+
+
+
+
+
+
+
+
+
                 <div className="col-span-full">
                   <Button disabled={form.formState.isSubmitting} type="submit">
                     {form.formState.isSubmitting && (
@@ -226,6 +282,21 @@ const ProductType = () => {
               </div>
             </form>
           </Form>
+            <ImageUploadModal
+                          isOpen={isImageModalOpen}
+                          onClose={() => setIsImageModalOpen(false)}
+                          onUpload={(images) => {
+                            if (images.length > 0) {
+                              const uploadedImage = images[0];
+                              form.setValue("image", {
+                                name: uploadedImage.img_name,
+                                url: uploadedImage.img_url,
+                                status: true,
+                                type: uploadedImage.img_type
+                              });
+                            }
+                          }}
+                        />
         </CardContent>
       </Card>
       <Table
