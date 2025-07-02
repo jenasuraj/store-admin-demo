@@ -103,11 +103,11 @@ export default function LandingPage() {
   if (errors.heroImage) messages.push(errors.heroImage.message)
 
   // Menu categories errors
-  if (errors.categories) {
-    errors.categories.forEach((catError, index) => {
-      if (catError?.name) messages.push(`Menu Category ${index + 1}: ${catError.name.message}`)
-    })
-  }
+  // if (errors?.categories) {
+  //   errors?.categories?.forEach((catError, index) => {
+  //     if (catError?.name) messages.push(`Menu Category ${index + 1}: ${catError.name.message}`)
+  //   })
+  // }
 
   // Gallery images errors
   if (errors.galleryImages) {
