@@ -37,6 +37,7 @@ export const userLogin = createAsyncThunk(
         body: JSON.stringify(data),
       });
       const result = await response.json();
+      
       if (response.status === 200) {
         toast.success("Login successful", { duration: 800 });
         localStorage.setItem("token", `${"Bearer " + result?.accesstoken}`);
@@ -59,6 +60,7 @@ const userSlice = createSlice({
       state.isAuthenticated = false;
       localStorage.removeItem("token");
     },
+
   },
   extraReducers: (builder) => {
     builder.addCase(userLogin.pending, (state) => {
@@ -79,6 +81,6 @@ const userSlice = createSlice({
 
 export default userSlice.reducer;
 
-export const { logout } = userSlice.actions;
+export const { logout  } = userSlice.actions;
 
 export const selectUser = (state: RootState) => state.user;

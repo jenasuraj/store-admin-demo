@@ -110,11 +110,11 @@ const links = [
     href: "/",
     icon: <LayoutDashboard className="h-5 w-5 flex-shrink-0" />,
   },
-  {
-    label: "Add Company",
-    href: "/add-company",
-    icon: <UserPlus className="h-5 w-5 flex-shrink-0" />,
-  },
+  // {
+  //   label: "Add Company",
+  //   href: "/add-company",
+  //   icon: <UserPlus className="h-5 w-5 flex-shrink-0" />,
+  // },
   {
     label: "Set Master",
     href: "/masters",
@@ -141,36 +141,42 @@ const links = [
       },
     ],
   },
+  // {
+  //   label: "Collections",
+  //   href: "/collections",
+  //   icon: <Component className="h-5 w-5 flex-shrink-0" />,
+  // },
+  // {
+  //   label: "Inventory",
+  //   href: "/inventory",
+  //   icon: <LucideWarehouse className="h-5 w-5 flex-shrink-0" />,
+  // },
+  // {
+  //   label: "Orders",
+  //   href: "/orders",
+  //   icon: <ArrowUpDown className="h-5 w-5 flex-shrink-0" />,
+  // },
   {
-    label: "Collections",
-    href: "/collections",
-    icon: <Component className="h-5 w-5 flex-shrink-0" />,
-  },
-  {
-    label: "Inventory",
-    href: "/inventory",
-    icon: <LucideWarehouse className="h-5 w-5 flex-shrink-0" />,
-  },
-  {
-    label: "Orders",
-    href: "/orders",
+    label : "Enquries",
+    href : '/enquires',
     icon: <ArrowUpDown className="h-5 w-5 flex-shrink-0" />,
+
   },
-  {
-    label: "Returns",
-    href: "/returns",
-    icon: <CircleArrowOutUpLeft className="h-5 w-5 flex-shrink-0" />,
-  },
-  {
-    label: "Exchange",
-    href: "/exchange",
-    icon: <Shuffle className="h-5 w-5 flex-shrink-0" />,
-  },
-  {
-    label: "Discount and Promotions",
-    href: "/discountPromoList",
-    icon: <Percent className="h-5 w-5 flex-shrink-0" />,
-  },
+  // {
+  //   label: "Returns",
+  //   href: "/returns",
+  //   icon: <CircleArrowOutUpLeft className="h-5 w-5 flex-shrink-0" />,
+  // },
+  // {
+  //   label: "Exchange",
+  //   href: "/exchange",
+  //   icon: <Shuffle className="h-5 w-5 flex-shrink-0" />,
+  // },
+  // {
+  //   label: "Discount and Promotions",
+  //   href: "/discountPromoList",
+  //   icon: <Percent className="h-5 w-5 flex-shrink-0" />,
+  // },
 ];
 
 export default Layout;

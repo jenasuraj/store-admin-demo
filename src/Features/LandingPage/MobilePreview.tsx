@@ -3,6 +3,9 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Phone, Mail, Instagram, Facebook, ChefHat, Utensils, Coffee, Wine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormValues } from "./LandingPage";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { BASE_URL } from "@/lib/constants";
 
 interface PreviewData {
   basicInfo: {
@@ -52,6 +55,21 @@ interface MobilePreviewProps {
 export default function MobilePreview({ data }: MobilePreviewProps) {
     const modifiedIframe = data.footerInfo.contact?.locationIframe?.replace(/width="[^"]*"/, 'width="400"')  // Replace any width with 400
   ?.replace(/height="[^"]*"/, 'height="300"'); // Replace any height with 300
+
+
+
+   const [subCategoryData,setSubCatergoryData] = useState([])
+
+ const fetchSubcategories = async() => {
+const response =  await axios.get( BASE_URL +`/api/categoryMappings/subCategories`)
+
+setSubCatergoryData(response.data)
+}
+
+useEffect(() => {
+
+  fetchSubcategories()
+},[])
   return (
     <div className="w-72 max-w-sm mx-auto">
       {/* Mobile Frame */}
@@ -89,64 +107,57 @@ export default function MobilePreview({ data }: MobilePreviewProps) {
                 </Button>
 
                 {/* Center Logo */}
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    {[ChefHat, Utensils, Coffee, Wine].map((Icon, index) => (
-                      <Icon key={index} className="w-3 h-3" />
-                    ))}
-                  </div>
-                  <div className="text-center">
+                  
+          <div className="mx-auto flex  flex-col items-center justify-center text-center">
                     <h1 className="text-sm font-bold tracking-wider">{data.basicInfo.name}</h1>
                     <p className="text-xs opacity-80">{data.basicInfo.tagline}</p>
                   </div>
                   <div className="flex gap-1">
-                    {[Wine, Coffee, Utensils, ChefHat].map((Icon, index) => (
-                      <Icon key={index} className="w-3 h-3" />
-                    ))}
+                    
                   </div>
-                </div>
+                
 
                 <div className="w-8"></div>
               </div>
             </header>
 
             {/* Hero Section */}
-      <div className="flex items-center justify-center md:min-h-[60vh] w-full bg-white  md: mt-2">
-  {data.heroImage?.url ? (
-    <img
-      src={data.heroImage.url}
-      alt={data.heroImage.name || "Restaurant hero"}
-          className="object-contain  md:max-h-[60vh]  lg:w-auto  w-full"
-    />
-  ) : (
-    <div className="h-48 bg-gray-200 flex items-center justify-center w-full">
-      <span className="text-gray-500">Hero Image</span>
-    </div>
-  )}
-</div>
+      <div className="w-full h-48 md:h-[60vh] flex items-center justify-center bg-white">
+        {data.heroImage?.url ? (
+          <img
+            src={data.heroImage.url}
+            alt={data.heroImage.name || "Restaurant hero"}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+            <span className="text-gray-500">Hero Image</span>
+          </div>
+        )}
+      </div>
 
             {/* Menu Section */}
             <section className="py-6 px-4">
-              <h2 className="text-xl font-bold text-center mb-4">OUR MENU</h2>
-              <div className="grid grid-cols-2 gap-3">
-                {data.categories.map((category) => (
-                  <Card key={category.id} className="overflow-hidden">
+              <h2 className="text-xl font-bold text-center mb-8">OUR MENU</h2>
+              <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+                {subCategoryData.map((category) => (
+                  <Card key={category.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border-0 shadow-md bg-white rounded-2xl">
                     <CardContent className="p-0">
                       <div className="aspect-square relative">
-                        {category.image ? (
+                        {category.imgURL ? (
                           <img
-                            src={category.image || "/placeholder.svg"}
+                            src={category.imgURL[0].url|| "/placeholder.svg"}
                             alt={category.name}
-                            className="object-cover w-full h-full"
+                            className="object-cover w-full h-full "
                           />
                         ) : (
                           <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                            <span className="text-gray-500 text-xs">{category.name}</span>
+                            <span className="text-gray-500 text-xs">{category.categoryName}</span>
                           </div>
                         )}
                       </div>
                       <div className="p-3 text-center">
-                        <h3 className="font-semibold text-sm">{category.name}</h3>
+                        <h3 className="font-semibold text-sm">{category.categoryName}</h3>
                       </div>
                     </CardContent>
                   </Card>
@@ -213,18 +224,18 @@ export default function MobilePreview({ data }: MobilePreviewProps) {
                 <div>
                   <div className="flex items-center justify-center gap-2 mb-3">
                     <div className="flex gap-1">
-                      {[ChefHat, Utensils, Coffee, Wine].map((Icon, index) => (
+                      {/* {[ChefHat, Utensils, Coffee, Wine].map((Icon, index) => (
                         <Icon key={index} className="w-3 h-3" />
-                      ))}
+                      ))} */}
                     </div>
                     <div>
                       <h3 className="text-sm font-bold tracking-wider">{data.basicInfo.name}</h3>
                       <p className="text-xs opacity-80">{data.basicInfo.tagline}</p>
                     </div>
                     <div className="flex gap-1">
-                      {[Wine, Coffee, Utensils, ChefHat].map((Icon, index) => (
+                      {/* {[Wine, Coffee, Utensils, ChefHat].map((Icon, index) => (
                         <Icon key={index} className="w-3 h-3" />
-                      ))}
+                      ))} */}
                     </div>
                   </div>
                 </div>

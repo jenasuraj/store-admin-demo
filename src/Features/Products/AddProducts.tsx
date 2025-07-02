@@ -86,6 +86,7 @@ interface Variant {
   price: string;
   title: string;
   quantity: string;
+  Variant : string;
   attributes: Record<string, any>;
   isDefault: boolean;
   images?: Array<{
@@ -249,6 +250,7 @@ export default function ProductForm() {
       sku: "",
       title: "",
       price: "",
+      description : "",
       quantity: "",
       attributes: {},
       isDefault: variants.length === 0,
@@ -395,6 +397,7 @@ export default function ProductForm() {
         ...variant.attributes,
         price: +variant.price,
         quantity: +variant.quantity,
+        description : +variant.description,
         imgs:
           variant.images?.map((img) => ({
             img_Id: img.img_Id,
@@ -862,6 +865,9 @@ export default function ProductForm() {
                             <TableHead className="after:ml-0.5 after:text-red-500 after:content-['*']">
                               Quantity
                             </TableHead>
+                             <TableHead className="after:ml-0.5 after:text-red-500 after:content-['*']">
+                              Description
+                            </TableHead>
                             <TableHead>Actions</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -1242,6 +1248,36 @@ export default function ProductForm() {
                                   ) : isNaN(+variant.quantity) ? (
                                     <p className="text-xs text-red-500 mt-1">
                                       Please enter a valid quantity
+                                    </p>
+                                  ) : null)}
+                              </TableCell>
+
+                              {/* Description */}
+                               <TableCell>
+                                <Input
+                                  // type="number"
+                                  value={variant.description}
+                                  onChange={(e) =>
+                                    updateVariant(variant.id, {
+                                      description: e.target.value,
+                                    })
+                                  }
+                                  className={`${
+                                    btnClick && +variant.description <= 0
+                                      ? "border-red-500 focus:border-red-500"
+                                      : ""
+                                  }`}
+                                />
+
+                                {btnClick &&
+                                  (!variant.description ||
+                                  +variant.description <= 0 ? (
+                                    <p className="text-xs text-red-500 mt-1">
+                                      Quantity is Required
+                                    </p>
+                                  ) : isNaN(+variant.description) ? (
+                                    <p className="text-xs text-red-500 mt-1">
+                                      Please enter a valid description
                                     </p>
                                   ) : null)}
                               </TableCell>

@@ -201,7 +201,8 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <BarChart1 dateFilter={dateFilter} />
-        {/* <LineChart1 /> */}
+
+    {/* <LineChart1 />  */}
       </div>
 
       {/* Date Filter Dialog */}

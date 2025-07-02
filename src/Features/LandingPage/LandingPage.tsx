@@ -61,7 +61,7 @@ const formSchema = z.object({
   
   }),
   heroImage: heroImageSchema,
-  categories: z.array(categorySchema),
+  // categories: z.array(categorySchema),
   galleryImages: z.array(z.string()),
   footerInfo: footerInfoSchema,
 })
@@ -72,12 +72,13 @@ export default function LandingPage() {
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
     const [id,setId] = useState('');
 
-    const [apiResponse, setApiResponse] = useState([]);
+  const [apiResponse, setApiResponse] = useState([]);
 
   const getAllErrorMessages = () => {
   const errors = form.formState.errors
   const messages: string[] = []
 
+ 
 
   // Basic Info errors
   if (errors.basicInfo) {
@@ -142,12 +143,14 @@ export default function LandingPage() {
     url: "https://d3kanykijpjn5y.cloudfront.net/da4ebb3e7c381b59bbbae758c901a959.gif",
     status: true,
     type: "image/gif"
-  },      categories: [
-        { id: 1, name: "Food", image: "/placeholder.svg?height=150&width=150" },
-        { id: 2, name: "Desserts", image: "/placeholder.svg?height=150&width=150" },
-        { id: 3, name: "Beverages", image: "/placeholder.svg?height=150&width=150" },
-        { id: 4, name: "Drinks", image: "/placeholder.svg?height=150&width=150" },
-      ],
+  },   
+  
+  // categories: [
+  //       { id: 1, name: "Food", image: "/placeholder.svg?height=150&width=150" },
+  //       { id: 2, name: "Desserts", image: "/placeholder.svg?height=150&width=150" },
+  //       { id: 3, name: "Beverages", image: "/placeholder.svg?height=150&width=150" },
+  //       { id: 4, name: "Drinks", image: "/placeholder.svg?height=150&width=150" },
+  //     ],
       galleryImages: [
         "/placeholder.svg?height=200&width=200",
         "/placeholder.svg?height=200&width=200",
@@ -182,21 +185,21 @@ export default function LandingPage() {
   const watchedValues = form.watch()
 
   // Add a menu category
-  const addMenuCategory = () => {
-    const currentCategories = form.getValues("categories")
-    const newId = currentCategories.length > 0 ? Math.max(...currentCategories.map((c) => c.id)) + 1 : 1
+  // const addMenuCategory = () => {
+  //   const currentCategories = form.getValues("categories")
+  //   const newId = currentCategories.length > 0 ? Math.max(...currentCategories.map((c) => c.id)) + 1 : 1
 
-    form.setValue("categories", [...currentCategories, { id: newId, name: "", image: "" }])
-  }
+  //   form.setValue("categories", [...currentCategories, { id: newId, name: "", image: "" }])
+  // }
 
   // Remove a menu category
-  const removeMenuCategory = (id: number) => {
-    const currentCategories = form.getValues("categories")
-    form.setValue(
-      "categories",
-      currentCategories.filter((cat) => cat.id !== id),
-    )
-  }
+  // const removeMenuCategory = (id: number) => {
+  //   const currentCategories = form.getValues("categories")
+  //   form.setValue(
+  //     "categories",
+  //     currentCategories.filter((cat) => cat.id !== id),
+  //   )
+  // }
 
   // Add a gallery image
   const addGalleryImage = () => {
@@ -211,14 +214,14 @@ export default function LandingPage() {
       "galleryImages",
       currentImages.filter((_, i) => i !== index),
     )
-  }
+  } 
 
   // Form submission handler
  async function onSubmit(data: FormValues) {
   try {
     // Check if we have existing data by looking at the first category or other required field
-    const hasExistingData = form.getValues("categories").length > 0 || 
-                          form.getValues("basicInfo.name") !== "";
+    // const hasExistingData = form.getValues("categories").length > 0 || 
+      const hasExistingData =    form.getValues("basicInfo.name") !== "";
     
     let response;
     if (apiResponse.length > 0 ) {
@@ -305,7 +308,7 @@ export default function LandingPage() {
                 <TabsList className="grid w-full grid-cols-6">
                   <TabsTrigger value="basic">Basic Info</TabsTrigger>
                   <TabsTrigger value="hero">Hero Section</TabsTrigger>
-                  <TabsTrigger value="menu">Menu</TabsTrigger>
+                  {/* <TabsTrigger value="menu">Menu</TabsTrigger> */}
                   <TabsTrigger value="gallery">Gallery</TabsTrigger>
                   <TabsTrigger value="contact">Contact</TabsTrigger>
                   <TabsTrigger value="footer">Footer</TabsTrigger>
@@ -435,7 +438,7 @@ export default function LandingPage() {
   </Card>
 </TabsContent>
 
-                <TabsContent value="menu" className="space-y-6">
+                {/* <TabsContent value="menu" className="space-y-6">
                   <Card>
                     <CardHeader>
                       <div className="flex justify-between items-center">
@@ -492,7 +495,7 @@ export default function LandingPage() {
                       ))}
                     </CardContent>
                   </Card>
-                </TabsContent>
+                </TabsContent> */}
 
                 <TabsContent value="gallery" className="space-y-6">
                   <Card>

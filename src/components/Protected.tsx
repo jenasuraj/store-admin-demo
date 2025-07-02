@@ -18,6 +18,7 @@ const ProtectedRoutes = () => {
   const ValidateToken = async () => {
     try {
       const response = await axios.get(BASE_URL + "/API/Login/ValidateToken");
+      
     } catch (error) {
       const axiosError = error as AxiosError;
       if (axiosError.status === 401) {

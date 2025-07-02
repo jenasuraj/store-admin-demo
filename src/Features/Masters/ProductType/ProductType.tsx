@@ -115,8 +115,17 @@ const ProductType = () => {
   });
 
   const onSubmit = async (data: Inputs) => {
+    console.log(data);
+    
     try {
-      const res = await axios.post(BASE_URL + "/api/addProductType", data);
+      const res = await axios.post(BASE_URL + "/api/addProductType",
+         {
+       categoryMappingId :   data.categoryMappingId,
+       productType : data.productType,
+       imgURL : [data.image]
+
+
+      });
       if (res.status === 201) {
         await dispatch(getSubCategories());
         await dispatch(getProductsType());

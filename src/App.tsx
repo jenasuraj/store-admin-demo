@@ -21,6 +21,7 @@ import DiscountForm from "./Features/Discounts/DiscountForm";
 import DiscountList from "./Features/Discounts/DiscountList";
 import DiscountPromoTabs from "./pages/DiscountPromoTabs";
 import LandingPage from "./Features/LandingPage/LandingPage";
+import Enquires from "./Features/Products/Components/Enquires/Enquires";
 
 axios.interceptors.request.use(
   function (config) {
@@ -83,6 +84,9 @@ function App() {
         {
           path: "/inventory",
           element: <InventoryList />,
+        },{
+          path : '/enquires',
+          element : <Enquires />
         },
         {
           path: "/orders",

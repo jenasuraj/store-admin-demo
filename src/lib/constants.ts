@@ -1,7 +1,12 @@
 // const BASE_URL = "https://hov.actifyzone.com/ecom-test" ;
 //  const BASE_URL = "https://ecom-admin.actifyzone.com/ECOM-ADMIN-PROD";
-//  const BASE_URL = "http://192.168.116:8082";
-  const BASE_URL = '/store-uat'
+//  const BASE_URL = "http://192.168.111:8082";
+
+  // const BASE_URL = '/store-uat'
+
+    const BASE_URL = 'https://store-admin-uat.actifyzone.com/store-uat'
+
+
 
  
 // const BASE_URL = "/ECOM-ADMIN-PROD";
@@ -9,7 +14,7 @@
 
 // const BASE_URL = ''
 
-// Master Admin
+// Master Admin 
 // "username":"master",
 
 // "password":"123456"
@@ -27,7 +32,9 @@ const SAS_TOKEN =
 const ACCOUNT_NAME = "actify";
 const STORAGE_ACCOUNT_SAS = `https://${ACCOUNT_NAME}.blob.core.windows.net/?${SAS_TOKEN}`;
 const CONTAINER_NAME = "cms";
-const FOLDER_NAME = "ecom";
+const FOLDER_NAME = "ecom/ECOM-UAT";
+// const FOLDER_NAME = "ecom/ECOM-PROD";
+
 export {
   BASE_URL,
   SAS_TOKEN,

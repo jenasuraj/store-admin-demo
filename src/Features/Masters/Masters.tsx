@@ -5,8 +5,18 @@ import AttributeValues from "./AttributeValues/AttributeValues";
 import { useSelector } from "react-redux";
 import { RootState } from "@/app/store";
 import OrderStatus from "./OrderStatus/OrderStatus";
+import AddQr from "./ManageQr";
+import { useAppDispatch } from "@/app/hooks";
+import { useEffect } from "react";
+import { userLogin } from "@/app/AuthSlice";
 const Masters = () => {
   const roleId = useSelector((state: RootState) => state.user.user);
+
+  const dispatch = useAppDispatch()
+  
+
+
+console.log(roleId);
 
   return (
     <Tabs defaultValue="category">
@@ -18,6 +28,9 @@ const Masters = () => {
         )}
         <TabsTrigger value="key-value">Attribute Values</TabsTrigger>
         <TabsTrigger value="order-status">Order Status</TabsTrigger>
+      
+        <TabsTrigger value = 'Add QR'> Add QR</TabsTrigger>
+      
         {/* <TabsTrigger value="transaction-type">Transaction Type</TabsTrigger> */}
       </TabsList>
       <TabsContent value="category" className="w-full">
@@ -31,6 +44,10 @@ const Masters = () => {
       </TabsContent>
       <TabsContent value="order-status" className="w-full">
         <OrderStatus />
+      </TabsContent>
+    
+     <TabsContent value="Add QR">
+         <AddQr/>
       </TabsContent>
     </Tabs>
   );

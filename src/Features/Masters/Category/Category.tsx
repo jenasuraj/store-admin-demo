@@ -120,6 +120,8 @@ const Category = () => {
   });
 
  const onSubmit = async (data: Inputs) => {
+  console.log(data, "data");
+  
     try {
       const res = await axios.post(
         BASE_URL + "/api/categories/addSubcategory",
@@ -127,10 +129,12 @@ const Category = () => {
           ? {
               parentCategoryName: data.parentCategoryName,
               subcategoryName: data.subcategoryName,
+              imgURL :[ data.subCategoryImage]
             }
           : {
               parentCategoryName: data.parentId,
               subcategoryName: data.subcategoryName,
+              imgURL : [data.subCategoryImage]
             }
       );
       if (res.status === 201) {
@@ -145,7 +149,7 @@ const Category = () => {
   };
 
 
-  console.log(form.getValues('subCategoryImage'));
+  // console.log(form.getValues('subCategoryImage'));
   
   return (
     <div className="flex flex-col gap-2">
