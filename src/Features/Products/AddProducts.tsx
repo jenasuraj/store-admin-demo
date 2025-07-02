@@ -84,6 +84,7 @@ interface Variant {
   id: string;
   sku: string;
   price: string;
+  description : string
   title: string;
   quantity: string;
   Variant : string;
@@ -135,6 +136,8 @@ export default function ProductForm() {
     {
       id: crypto.randomUUID(),
       sku: "",
+      Variant : "",
+      description : "",
       title: "",
       price: "",
       quantity: "",
@@ -248,6 +251,7 @@ export default function ProductForm() {
     const newVariant: Variant = {
       id: crypto.randomUUID(),
       sku: "",
+      Variant : "",
       title: "",
       price: "",
       description : "",
@@ -417,9 +421,11 @@ export default function ProductForm() {
           {
             id: crypto.randomUUID(),
             sku: "",
+            Variant: "",
             title: "",
             price: "",
             quantity: "",
+            description: "",
             attributes: {
               keyName: "",
             },
