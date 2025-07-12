@@ -1,6 +1,6 @@
 // const BASE_URL = "https://hov.actifyzone.com/ecom-test" ;
 //  const BASE_URL = "https://ecom-admin.actifyzone.com/ECOM-ADMIN-PROD";
-//  const BASE_URL = "http://192.168.111:8082";
+//  const BASE_URL = "http://192.168.108:8082";
 
   // const BASE_URL = '/store-uat'
 

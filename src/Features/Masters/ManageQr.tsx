@@ -95,6 +95,7 @@ const QRCodeWithLogo = ({
         className="border rounded-lg"
         style={{ display: qrDataUrl ? "block" : "none" }}
       />
+      
       {!qrDataUrl && (
         <div
           className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg"
