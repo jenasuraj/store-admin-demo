@@ -134,11 +134,11 @@ const links = [
         label : "Add landing Page",
         href : "/product/addLandingPage",
       },
-      {
-        label: "All Products",
-        href: "/product/list",
-        // icon: <Package2 className="h-5 w-5 flex-shrink-0" />,
-      },
+      // {
+      //   label: "All Products",
+      //   href: "/product/list",
+      //   // icon: <Package2 className="h-5 w-5 flex-shrink-0" />,
+      // },
     ],
   },
   // {
