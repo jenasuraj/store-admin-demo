@@ -1,5 +1,3 @@
-"use client"
-
 import { Clock, Package, PackageCheck, Plane, Truck } from "lucide-react"
 
 import type { ColumnDef } from "@tanstack/react-table"
@@ -26,8 +24,11 @@ export const invoicesTableColumns: ColumnDef<InvoiceType>[] = [
     header: ({ table }) => (
       <Checkbox
         checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
+          table.getIsAllPageRowsSelected()
+            ? true
+            : table.getIsSomePageRowsSelected()
+              ? "indeterminate"
+              : false
         }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         className="ms-4"

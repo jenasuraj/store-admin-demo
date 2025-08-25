@@ -1,8 +1,16 @@
-import { createContext, useCallback, useEffect, useState } from "react"
-import { useCookie } from "react-use"
+import { createContext, useCallback, useEffect, useState } from "react";
+import { useCookie } from "react-use";
 
-import type { ReactNode } from "react"
-import { LocaleType, SettingsType } from "@/lib/types"
+import type { ReactNode } from "react";
+import { LocaleType } from "@/lib/types";
+
+export type SettingsType = {
+  theme: any;
+  mode: any;
+  radius: any;
+  layout: any;
+  locale: LocaleType;
+};
 
 export const defaultSettings: SettingsType = {
   theme: "zinc",
@@ -10,52 +18,52 @@ export const defaultSettings: SettingsType = {
   radius: 0.5,
   layout: "vertical",
   locale: "en",
-}
+};
 
 export const SettingsContext = createContext<
   | {
-      settings: SettingsType
-      updateSettings: (newSettings: SettingsType) => void
-      resetSettings: () => void
+      settings: SettingsType;
+      updateSettings: (newSettings: SettingsType) => void;
+      resetSettings: () => void;
     }
   | undefined
->(undefined)
+>(undefined);
 
 export function SettingsProvider({
   locale,
   children,
 }: {
-  locale: LocaleType
-  children: ReactNode
+  locale: LocaleType;
+  children: ReactNode;
 }) {
   const [storedSettings, setStoredSettings, deleteStoredSettings] =
-    useCookie("settings")
-  const [settings, setSettings] = useState<SettingsType | null>(null)
+    useCookie("settings");
+  const [settings, setSettings] = useState<SettingsType | null>(null);
 
   useEffect(() => {
     if (storedSettings) {
-      setSettings(JSON.parse(storedSettings))
+      setSettings(JSON.parse(storedSettings));
     } else {
-      setSettings({ ...defaultSettings, locale })
+      setSettings({ ...defaultSettings, locale });
     }
-  }, [storedSettings, locale])
+  }, [storedSettings, locale]);
 
   const updateSettings = useCallback(
     (newSettings: SettingsType) => {
-      setStoredSettings(JSON.stringify(newSettings))
-      setSettings(newSettings)
+      setStoredSettings(JSON.stringify(newSettings));
+      setSettings(newSettings);
     },
     [setStoredSettings]
-  )
+  );
 
   const resetSettings = useCallback(() => {
-    deleteStoredSettings()
-    setSettings(defaultSettings)
-  }, [deleteStoredSettings])
+    deleteStoredSettings();
+    setSettings(defaultSettings);
+  }, [deleteStoredSettings]);
 
   // Render children only when settings are ready
   if (!settings) {
-    return null
+    return null;
   }
 
   return (
@@ -64,5 +72,5 @@ export function SettingsProvider({
     >
       {children}
     </SettingsContext.Provider>
-  )
+  );
 }

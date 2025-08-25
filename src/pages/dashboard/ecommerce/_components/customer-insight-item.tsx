@@ -1,8 +1,5 @@
-"use client"
-
-import type { IconType } from "@/types"
-
 import { Badge } from "@/components/ui/badge"
+import { IconType } from "@/lib/types"
 
 export function CustomerInsightItem({
   title,

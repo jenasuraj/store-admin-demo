@@ -1,10 +1,8 @@
-"use client"
-
 import { Scatter, ScatterChart, XAxis, YAxis } from "recharts"
 
 import type { ComponentProps } from "react"
 import type { ScatterPointItem } from "recharts/types/cartesian/Scatter"
-import type { GenderDistributionType } from "../../analytics/types"
+
 
 import { formatPercent } from "@/lib/utils"
 
@@ -14,6 +12,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { GenderDistributionType } from "../_data/gender-distribution"
 
 // Function to normalize values to proportional sizes
 const getNormalizedSize = (value: number, min: number, max: number) => {
