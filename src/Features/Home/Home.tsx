@@ -17,6 +17,7 @@ import { useFetch } from "@/customHooks/useFetch";
 import { BarChart1 } from "@/components/BarChart";
 import { LineChart1 } from "@/components/LineChart";
 import { DateFilterDialog } from "@/components/DateFilterDialog";
+import EcommercePage from "@/pages/dashboard/ecommerce/page";
 
 interface AnalyticsData {
   date: string;
@@ -164,49 +165,50 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-6 max-md:pb-16 bg-white w-full space-y-6 h-fit overflow-scroll min-h-screen">
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <DashboardCard
-          label="Total Users"
-          color="blue"
-          icon={<Users className="w-6 h-6 text-blue-600" />}
-          number={totalData?.totalUsers || 0}
-          loading={totalDataLoading}
-        />
+    // <div className="p-6 max-md:pb-16 bg-white w-full space-y-6 h-fit overflow-scroll min-h-screen">
+    //   <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    //     <DashboardCard
+    //       label="Total Users"
+    //       color="blue"
+    //       icon={<Users className="w-6 h-6 text-blue-600" />}
+    //       number={totalData?.totalUsers || 0}
+    //       loading={totalDataLoading}
+    //     />
 
-        <DashboardCard
-          label="Active Users"
-          color="green"
-          icon={<UserRoundPlus className="text-green-500" />}
-          number={currentDayData?.activeUsers || 0}
-          loading={currentDayLoading}
-        />
+    //     <DashboardCard
+    //       label="Active Users"
+    //       color="green"
+    //       icon={<UserRoundPlus className="text-green-500" />}
+    //       number={currentDayData?.activeUsers || 0}
+    //       loading={currentDayLoading}
+    //     />
 
-        <DashboardCard
-          label="New Users"
-          color="purple"
-          icon={<User className="w-6 h-6 text-purple-600" />}
-          number={currentDayData?.newUsers || 0}
-          loading={currentDayLoading}
-        />
+    //     <DashboardCard
+    //       label="New Users"
+    //       color="purple"
+    //       icon={<User className="w-6 h-6 text-purple-600" />}
+    //       number={currentDayData?.newUsers || 0}
+    //       loading={currentDayLoading}
+    //     />
 
-        <DashboardCard
-          label="Total Skus"
-          color="yellow"
-          icon={<Shirt className="w-6 h-6 text-yellow-600" />}
-          number={skuData?.skuCount || 0}
-          loading={skuLoading}  
-        />
-      </div>
+    //     <DashboardCard
+    //       label="Total Skus"
+    //       color="yellow"
+    //       icon={<Shirt className="w-6 h-6 text-yellow-600" />}
+    //       number={skuData?.skuCount || 0}
+    //       loading={skuLoading}
+    //     />
+    //   </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <BarChart1 dateFilter={dateFilter} />
+    //   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    //     <BarChart1 dateFilter={dateFilter} />
 
-    {/* <LineChart1 />  */}
-      </div>
+    // {/* <LineChart1 />  */}
+    //   </div>
 
-      {/* Date Filter Dialog */}
-      <DateFilterDialog onApplyFilter={handleDateFilterApply} />
-    </div>
+    //   {/* Date Filter Dialog */}
+    //   <DateFilterDialog onApplyFilter={handleDateFilterApply} />
+    // </div>
+    <EcommercePage />
   );
 }
