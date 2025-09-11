@@ -30,7 +30,7 @@ export const userLogin = createAsyncThunk(
   async (data: any, thunkAPI) => {
     try {
       const response = await fetch(`${BASE_URL}/API/Login/Check`, {
-        method: "POST",
+        method: "POST",        
         headers: {
           "Content-Type": "application/json",
         },

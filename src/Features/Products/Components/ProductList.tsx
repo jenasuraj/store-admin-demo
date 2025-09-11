@@ -45,7 +45,7 @@ export default function ProductList() {
     fetchProducts(params);
   }, [params]);
 
- 
+
 
   return (
     <div className="p-8 w-full max-w-[100vw] bg-white mx-auto">
