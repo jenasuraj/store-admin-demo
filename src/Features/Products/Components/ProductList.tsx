@@ -9,6 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useLocation, useNavigate } from "react-router-dom";
 
+
+interface ProductTableProps {
+  products: ProductResponse[];
+  onStatusChange: (productId: number, newStatus: string) => void;
+}
+
 export default function ProductList() {
   const [product, setProduct] = useState<ProductResponse[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
@@ -17,23 +23,47 @@ export default function ProductList() {
   const [status, setStatus] = useState("active");
   const navigate = useNavigate();
   const params = useLocation().search;
+  const [activeProducts, setActiveProducts] = useState<ProductResponse[]>([]);
+  const [draftProducts, setDraftProducts] = useState<ProductResponse[]>([]);
+
 
   const fetchProducts = async (attribute: string) => {
     try {
-      const res = await axios.get(
-        `${BASE_URL}/api/products/get/filter${attribute}`
-      );
+      const res = await axios.get(`${BASE_URL}/api/products${attribute}`);
 
       if (res.status === 200) {
-        setProduct(res.data.content);
-        setTotalPages(res.data.totalPages);
-      } else {
-        console.error("Unexpected response status:", res.status);
+        setProduct(res.data);
+        setTotalPages(1);
+        console.log(res.data, " response dataaaa......")
       }
     } catch (error) {
       console.error("Error fetching products:", error);
     }
   };
+
+  const fetchActiveProducts = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/products?status=active`);
+      if (res.status === 200) setActiveProducts(res.data);
+    } catch (error) {
+      console.error("Error fetching active products:", error);
+    }
+  };
+
+  const fetchDraftProducts = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/products?status=draft`);
+      if (res.status === 200) setDraftProducts(res.data);
+    } catch (error) {
+      console.error("Error fetching draft products:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchActiveProducts();
+    fetchDraftProducts();
+  }, []);
+
 
   useEffect(() => {
     navigate({
@@ -43,21 +73,46 @@ export default function ProductList() {
 
   useEffect(() => {
     fetchProducts(params);
+    console.log(params, " paramsssssssss")
   }, [params]);
 
- 
+
+  const updateStatus = async (productId: number, newStatus: string) => {
+    try {
+      const res = await axios.put(
+        `${BASE_URL}/api/products/updateStatus/${productId}?status=${newStatus}`
+      );
+
+      if (res.status === 200) {
+        if (newStatus === "draft") {
+          // remove from active & add to draft
+          setActiveProducts(prev => prev.filter(p => p.productId !== productId));
+          setDraftProducts(prev => [...prev, res.data]); // assuming API returns updated product
+        } else if (newStatus === "active") {
+          // remove from draft & add to active
+          setDraftProducts(prev => prev.filter(p => p.productId !== productId));
+          setActiveProducts(prev => [...prev, res.data]);
+        }
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+    }
+  };
+
 
   return (
     <div className="p-8 w-full max-w-[100vw] bg-white mx-auto">
+
       <Tabs defaultValue="active">
         <TabsList>
-          <TabsTrigger value="active" onClick={() => setStatus("active")}>
+          <TabsTrigger value="active">
             Active
           </TabsTrigger>
-          <TabsTrigger value="draft" onClick={() => setStatus("draft")}>
+          <TabsTrigger value="draft">
             Draft
           </TabsTrigger>
         </TabsList>
+
         <TabsContent value="active">
           <Card>
             <CardHeader>
@@ -73,7 +128,9 @@ export default function ProductList() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <ProductTable products={product} />
+                {/* <ProductTable products={product} /> */}
+                <ProductTable products={activeProducts} onStatusChange={updateStatus} />
+
               </div>
             </CardContent>
           </Card>
@@ -93,7 +150,7 @@ export default function ProductList() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <ProductTable products={product} />
+                <ProductTable products={draftProducts} onStatusChange={updateStatus} />
               </div>
             </CardContent>
           </Card>

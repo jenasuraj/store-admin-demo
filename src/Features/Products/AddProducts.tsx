@@ -84,10 +84,10 @@ interface Variant {
   id: string;
   sku: string;
   price: string;
-  description : string
+  description: string
   title: string;
   quantity: string;
-  Variant : string;
+  Variant: string;
   attributes: Record<string, any>;
   isDefault: boolean;
   images?: Array<{
@@ -136,8 +136,8 @@ export default function ProductForm() {
     {
       id: crypto.randomUUID(),
       sku: "",
-      Variant : "",
-      description : "",
+      Variant: "",
+      description: "",
       title: "",
       price: "",
       quantity: "",
@@ -200,7 +200,7 @@ export default function ProductForm() {
       .get(BASE_URL + `/api/productAttributes/${subCategoryValue}`)
       .then((response) => {
         // Store the response as needed, e.g. in state
-        console.log(response.data);
+        console.log(response.data, "store data");
 
         setproductType(response.data);
       })
@@ -251,10 +251,10 @@ export default function ProductForm() {
     const newVariant: Variant = {
       id: crypto.randomUUID(),
       sku: "",
-      Variant : "",
+      Variant: "",
       title: "",
       price: "",
-      description : "",
+      description: "",
       quantity: "",
       attributes: {},
       isDefault: variants.length === 0,
@@ -401,7 +401,7 @@ export default function ProductForm() {
         ...variant.attributes,
         price: +variant.price,
         quantity: +variant.quantity,
-        description : +variant.description,
+        description: variant.description,  //issue was the + is making the description to treat like number
         imgs:
           variant.images?.map((img) => ({
             img_Id: img.img_Id,
@@ -606,11 +606,10 @@ export default function ProductForm() {
                         >
                           <SelectTrigger>
                             {field.value
-                              ? `${
-                                  subCategoryList?.find(
-                                    (i) => `${i.categoryId}` == `${field.value}`
-                                  )?.categoryName
-                                }`
+                              ? `${subCategoryList?.find(
+                                (i) => `${i.categoryId}` == `${field.value}`
+                              )?.categoryName
+                              }`
                               : "Select product type"}
                           </SelectTrigger>
                           <SelectContent>
@@ -651,11 +650,10 @@ export default function ProductForm() {
                           <SelectTrigger>
                             {/* <SelectValue placeholder="Select product type" /> */}
                             {field.value
-                              ? `${
-                                  productType?.find(
-                                    (i) => `${i.id}` == `${field.value}`
-                                  )?.productType
-                                }`
+                              ? `${productType?.find(
+                                (i) => `${i.id}` == `${field.value}`
+                              )?.productType
+                              }`
                               : "Select product type"}{" "}
                           </SelectTrigger>
                           <SelectContent>
@@ -820,8 +818,8 @@ export default function ProductForm() {
                                       {selectedAttributes.includes(
                                         attr?.keyName
                                       ) && (
-                                        <Check className="h-5 w-5 text-primary" />
-                                      )}
+                                          <Check className="h-5 w-5 text-primary" />
+                                        )}
                                     </div>
                                   </div>
                                 </CommandItem>
@@ -847,7 +845,7 @@ export default function ProductForm() {
                               );
                               const formattedAttributeName = attribute
                                 ? attribute.keyName.charAt(0).toUpperCase() +
-                                  attribute.keyName.slice(1)
+                                attribute.keyName.slice(1)
                                 : "";
 
                               return (
@@ -871,7 +869,7 @@ export default function ProductForm() {
                             <TableHead className="after:ml-0.5 after:text-red-500 after:content-['*']">
                               Quantity
                             </TableHead>
-                             <TableHead className="after:ml-0.5 after:text-red-500 after:content-['*']">
+                            <TableHead className="after:ml-0.5 after:text-red-500 after:content-['*']">
                               Description
                             </TableHead>
                             <TableHead>Actions</TableHead>
@@ -945,11 +943,10 @@ export default function ProductForm() {
                                   <TableCell key={attrId}>
                                     {attribute?.keyName === "color" ? (
                                       <Select
-                                        value={`${
-                                          variant.attributes[
-                                            attribute?.keyName
-                                          ] || ""
-                                        }`}
+                                        value={`${variant.attributes[
+                                          attribute?.keyName
+                                        ] || ""
+                                          }`}
                                         onValueChange={(value) =>
                                           updateVariant(variant.id, {
                                             attributes: {
@@ -961,30 +958,28 @@ export default function ProductForm() {
                                         }
                                       >
                                         <SelectTrigger
-                                          className={`w-[120px] truncate ${
-                                            btnClick &&
+                                          className={`w-[120px] truncate ${btnClick &&
                                             !variant.attributes[
-                                              attribute?.keyName
+                                            attribute?.keyName
                                             ]
-                                              ? "border-red-500 focus:border-red-500"
-                                              : ""
-                                          }`}
+                                            ? "border-red-500 focus:border-red-500"
+                                            : ""
+                                            }`}
                                         >
                                           {attribute?.keyName === "color" &&
-                                          variant?.attributes[
+                                            variant?.attributes[
                                             attribute?.keyName
-                                          ] ? (
+                                            ] ? (
                                             <div className="flex items-center gap-2 overflow-hidden">
                                               {variant?.attributes[
                                                 attribute?.keyName
                                               ].includes("-") ? (
                                                 <>
                                                   <SquareIcon
-                                                    fill={`#${
-                                                      variant?.attributes[
-                                                        attribute?.keyName
-                                                      ].split("-")[1]
-                                                    }`}
+                                                    fill={`#${variant?.attributes[
+                                                      attribute?.keyName
+                                                    ].split("-")[1]
+                                                      }`}
                                                     stroke="lightgrey"
                                                   />
                                                   <p
@@ -1007,13 +1002,13 @@ export default function ProductForm() {
                                                   className="truncate overflow-hidden whitespace-nowrap"
                                                   title={stripHtml(
                                                     variant?.attributes[
-                                                      attribute?.keyName
+                                                    attribute?.keyName
                                                     ]
                                                   )}
                                                 >
                                                   {stripHtml(
                                                     variant?.attributes[
-                                                      attribute?.keyName
+                                                    attribute?.keyName
                                                     ]
                                                   )}
                                                 </p>
@@ -1050,11 +1045,10 @@ export default function ProductForm() {
                                       </Select>
                                     ) : (
                                       <Select
-                                        value={`${
-                                          variant.attributes[
-                                            attribute?.keyName
-                                          ] || ""
-                                        }`}
+                                        value={`${variant.attributes[
+                                          attribute?.keyName
+                                        ] || ""
+                                          }`}
                                         onValueChange={(value) =>
                                           updateVariant(variant.id, {
                                             attributes: {
@@ -1066,19 +1060,18 @@ export default function ProductForm() {
                                         }
                                       >
                                         <SelectTrigger
-                                          className={`w-[120px] truncate ${
-                                            btnClick &&
+                                          className={`w-[120px] truncate ${btnClick &&
                                             !variant.attributes[
-                                              attribute?.keyName
+                                            attribute?.keyName
                                             ]
-                                              ? "border-red-500 focus:border-red-500"
-                                              : ""
-                                          }`}
+                                            ? "border-red-500 focus:border-red-500"
+                                            : ""
+                                            }`}
                                         >
                                           {attribute?.keyName &&
-                                          variant?.attributes[
+                                            variant?.attributes[
                                             attribute?.keyName
-                                          ] ? (
+                                            ] ? (
                                             <div className="flex items-center gap-2 overflow-hidden">
                                               <p
                                                 className="truncate overflow-hidden whitespace-nowrap"
@@ -1115,7 +1108,7 @@ export default function ProductForm() {
                                     )}
                                     {btnClick &&
                                       !variant.attributes[
-                                        attribute?.keyName
+                                      attribute?.keyName
                                       ] && (
                                         <p className="text-xs text-red-500 mt-1">
                                           <span className="capitalize">
@@ -1148,13 +1141,12 @@ export default function ProductForm() {
                                     }
                                   }}
                                   placeholder="SKU-123"
-                                  className={`border ${
-                                    btnClick && !variant.sku
-                                      ? "border-red-500 focus:border-red-500"
-                                      : skuErrors[variant.id]
+                                  className={`border ${btnClick && !variant.sku
+                                    ? "border-red-500 focus:border-red-500"
+                                    : skuErrors[variant.id]
                                       ? "border-red-500 focus-visible:ring-red-500"
                                       : ""
-                                  }`}
+                                    }`}
                                 />
                                 {btnClick && !variant.sku?.trim() && (
                                   <p className="text-xs text-red-500 mt-1">
@@ -1172,10 +1164,10 @@ export default function ProductForm() {
                                     i.sku === variant.sku &&
                                     i.id !== variant.id
                                 ) && (
-                                  <p className="text-xs text-red-500 mt-1">
-                                    Sku Already Selected
-                                  </p>
-                                )}
+                                    <p className="text-xs text-red-500 mt-1">
+                                      Sku Already Selected
+                                    </p>
+                                  )}
                               </TableCell>
 
                               {/* Title */}
@@ -1187,11 +1179,10 @@ export default function ProductForm() {
                                       title: e.target.value,
                                     })
                                   }
-                                  className={`${
-                                    btnClick && +variant.price <= 0
-                                      ? "border-red-500 focus:border-red-500"
-                                      : ""
-                                  }`}
+                                  className={`${btnClick && +variant.price <= 0
+                                    ? "border-red-500 focus:border-red-500"
+                                    : ""
+                                    }`}
                                 />
                                 {btnClick && +variant.price <= 0 && (
                                   <p className="text-xs text-red-500 mt-1">
@@ -1210,11 +1201,10 @@ export default function ProductForm() {
                                       price: e.target.value,
                                     })
                                   }
-                                  className={`${
-                                    btnClick && +variant.price <= 0
-                                      ? "border-red-500 focus:border-red-500"
-                                      : ""
-                                  }`}
+                                  className={`${btnClick && +variant.price <= 0
+                                    ? "border-red-500 focus:border-red-500"
+                                    : ""
+                                    }`}
                                 />
                                 {btnClick &&
                                   (!variant.price || +variant.price <= 0 ? (
@@ -1238,16 +1228,15 @@ export default function ProductForm() {
                                       quantity: e.target.value,
                                     })
                                   }
-                                  className={`${
-                                    btnClick && +variant.quantity <= 0
-                                      ? "border-red-500 focus:border-red-500"
-                                      : ""
-                                  }`}
+                                  className={`${btnClick && +variant.quantity <= 0
+                                    ? "border-red-500 focus:border-red-500"
+                                    : ""
+                                    }`}
                                 />
 
                                 {btnClick &&
                                   (!variant.quantity ||
-                                  +variant.quantity <= 0 ? (
+                                    +variant.quantity <= 0 ? (
                                     <p className="text-xs text-red-500 mt-1">
                                       Quantity is Required
                                     </p>
@@ -1259,7 +1248,7 @@ export default function ProductForm() {
                               </TableCell>
 
                               {/* Description */}
-                               <TableCell>
+                              <TableCell>
                                 <Input
                                   // type="number"
                                   value={variant.description}
@@ -1268,16 +1257,15 @@ export default function ProductForm() {
                                       description: e.target.value,
                                     })
                                   }
-                                  className={`${
-                                    btnClick && +variant.description <= 0
-                                      ? "border-red-500 focus:border-red-500"
-                                      : ""
-                                  }`}
+                                  className={`${btnClick && +variant.description <= 0
+                                    ? "border-red-500 focus:border-red-500"
+                                    : ""
+                                    }`}
                                 />
 
                                 {btnClick &&
                                   (!variant.description ||
-                                  +variant.description <= 0 ? (
+                                    +variant.description <= 0 ? (
                                     <p className="text-xs text-red-500 mt-1">
                                       Quantity is Required
                                     </p>
