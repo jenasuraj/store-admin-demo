@@ -1,6 +1,6 @@
-// function AllProduct () {
-//     return<>
-//      <h1>hello</h1>
-//     </>
-// }
-// export default AllProduct
+function AllProduct () {
+    return<>
+     <h1>hello</h1>
+    </>
+}
+export default AllProduct
