@@ -51,7 +51,8 @@ export default function ProductTable({
   products,
   onStatusChange,
 }: {
-  products: ProductResponse[];
+    products: ProductResponse[];
+    onStatusChange?: (productId: number, newStatus: string) => void;
 }) {
   const [expandedProducts, setExpandedProducts] = React.useState<number[]>([]);
   const [expandedAttributes, setExpandedAttributes] = React.useState<{

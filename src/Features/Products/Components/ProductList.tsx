@@ -11,8 +11,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 
 interface ProductTableProps {
-  products: ProductResponse[];
-  onStatusChange: (productId: number, newStatus: string) => void;
+  products?: ProductResponse[];
+  onStatusChange?: (productId: number, newStatus: string) => void;
 }
 
 export default function ProductList() {
