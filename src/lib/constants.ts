@@ -1,8 +1,8 @@
 // const BASE_URL = "https://hov.actifyzone.com/ecom-test" ;
-// const BASE_URL = "https://store-admin.actifyzone.com/STORE-API";
+const BASE_URL = "https://store-admin.actifyzone.com/STORE-API";
 //  const BASE_URL = "http://192.168.108:8082";
 
-const BASE_URL = '/store-uat'
+// const BASE_URL = '/store-uat'
 
 // const BASE_URL = "https://store-admin-uat.actifyzone.com/store-uat";
 
