@@ -24,6 +24,10 @@ import { collectionSlice } from "@/Features/Collections/collectionSlice";
 import { discountSlice } from "./DiscountSlice";
 import { promoSlice } from "./PromoSlice";
 import { offerSlice } from "./OfferSlice";
+import { grpCompaniesSlice } from "@/app/grpCompaniesSlice";
+import { sidebarSlice } from "@/components/sidebarManager/sidebarSlice";
+import { companiesSlice } from "@/app/companySlice";
+import { branchCompaniesSlice } from "@/app/branchCompanySlice";
 
 const reducers = {
   user: userSlice,
@@ -46,6 +50,10 @@ const reducers = {
   discount: discountSlice.reducer,
   promo: promoSlice.reducer,
   offer: offerSlice.reducer,
+  sidebarManager: sidebarSlice.reducer,
+  grpCompanies: grpCompaniesSlice.reducer,
+  companies: companiesSlice.reducer,
+  branchCompanies: branchCompaniesSlice.reducer,
 };
 
 const rootReducer = combineReducers(reducers);

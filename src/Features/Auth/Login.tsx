@@ -20,7 +20,7 @@ const schema = z.object({
 });
 
 export default function LoginPage() {
-  const { isAuthenticated, loading, error } = useSelector(selectUser);
+  const { isAuthenticated, loading, error,user } = useSelector(selectUser);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
@@ -33,16 +33,18 @@ export default function LoginPage() {
   const onSubmit = async (data: any) => {
     const response = await dispatch(userLogin(data));
     if (response.type === "user/login/fulfilled") {
-      navigate("/", { replace: true });
+      navigate( response.payload?.path, { replace: true });
     }
   };
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/", { replace: true });
+      navigate(user?.path, { replace: true });
     }
+
+    
     if (localStorage.getItem("token")) {
-      navigate("/", { replace: true });
+      navigate(user.path, { replace: true });
     }
   }, []);
 

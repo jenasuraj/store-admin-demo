@@ -1,5 +1,5 @@
 import { Outlet, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sidebar, SidebarBody, SidebarLink } from "./components/ui/sidebar";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -9,20 +9,25 @@ import {
   CircleArrowOutUpLeft,
   Cog,
   Component,
+  FolderTree,
   LayoutDashboard,
   LogOutIcon,
   Package2,
   Percent,
+  Sheet,
   Shuffle,
   UserPlus,
 } from "lucide-react";
 import { useDispatch } from "react-redux";
-import { logout } from "./app/AuthSlice";
+import { logout, selectUser } from "./app/AuthSlice";
 import { LucideWarehouse } from "lucide-react";
 import { toast } from "sonner";
+import { useAppSelector } from "./app/hooks";
 const Layout = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const { user } = useAppSelector(selectUser);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -31,10 +36,25 @@ const Layout = () => {
     });
     // sessionStorage.clear();
     toast.success("You have successfully logged out!");
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
   const [open, setOpen] = useState(false);
+
+  //   useEffect(() => {
+  //   // const groupCompanyId = localStorage.getItem("groupCompanyId");
+
+  //   // // if (localStorage.getItem("token")) {
+  //   // if (Number(groupCompanyId) === 3) {
+  //   //   navigate("/masters", { replace: true });
+  //   // } else {
+  //   //   navigate("/", { replace: true });
+  //     // }
+  //     navigate(user.user.path)
+  //     console.log(user.user.path);
+
+  //   // }
+  // }, []);
   return (
     <div
       className={cn(
@@ -51,7 +71,7 @@ const Layout = () => {
           >
             {open ? <Logo /> : <LogoIcon />}
             <div className="mt-8 flex flex-col gap-2">
-              {links.map((link, idx) => (
+              {user.modules?.map((link, idx) => (
                 <SidebarLink key={idx} link={link} />
               ))}
             </div>
@@ -62,7 +82,7 @@ const Layout = () => {
           >
             <SidebarLink
               link={{
-                label: "Logout",
+                moduleName: "Logout",
                 icon: <LogOutIcon />,
               }}
             />
@@ -106,19 +126,29 @@ export const LogoIcon = () => {
 
 const links = [
   {
-    label: "Dashboard",
-    href: "/",
+    label: "Sidebar Manager",
+    href: "/sidebar-manager",
+    icon: <FolderTree className="h-5 w-5 flex-shrink-0" />,
+  },
+  {
+    label: "Add Company",
+    href: "/add-company",
+    icon: <UserPlus className="h-5 w-5 flex-shrink-0" />,
+  },
+  {
+    label: "Ledger Dashboard",
+    href: "/ledger-dashboard",
     icon: <LayoutDashboard className="h-5 w-5 flex-shrink-0" />,
   },
-  // {
-  //   label: "Add Company",
-  //   href: "/add-company",
-  //   icon: <UserPlus className="h-5 w-5 flex-shrink-0" />,
-  // },
   {
-    label: "Set Master",
-    href: "/masters",
-    icon: <Cog className=" h-5 w-5 flex-shrink-0" />,
+    label: "Masters",
+    href: "/ledger-masters",
+    icon: <Cog className="h-5 w-5 flex-shrink-0" />,
+  },
+  {
+    label: "Ledger",
+    href: "/ledger-sheet",
+    icon: <Sheet className="h-5 w-5 flex-shrink-0" />,
   },
   {
     label: "Products",
@@ -131,52 +161,12 @@ const links = [
         // icon: <Package2 className="h-5 w-5 flex-shrink-0" />,
       },
       {
-        label : "Add landing Page",
-        href : "/product/addLandingPage",
-      },
-      {
         label: "All Products",
-        href: "/product/list",
+        href: "/ledger/product-list",
         // icon: <Package2 className="h-5 w-5 flex-shrink-0" />,
       },
     ],
   },
-  // {
-  //   label: "Collections",
-  //   href: "/collections",
-  //   icon: <Component className="h-5 w-5 flex-shrink-0" />,
-  // },
-  // {
-  //   label: "Inventory",
-  //   href: "/inventory",
-  //   icon: <LucideWarehouse className="h-5 w-5 flex-shrink-0" />,
-  // },
-  // {
-  //   label: "Orders",
-  //   href: "/orders",
-  //   icon: <ArrowUpDown className="h-5 w-5 flex-shrink-0" />,
-  // },
-  {
-    label : "Enquries",
-    href : '/enquires',
-    icon: <ArrowUpDown className="h-5 w-5 flex-shrink-0" />,
-
-  },
-  // {
-  //   label: "Returns",
-  //   href: "/returns",
-  //   icon: <CircleArrowOutUpLeft className="h-5 w-5 flex-shrink-0" />,
-  // },
-  // {
-  //   label: "Exchange",
-  //   href: "/exchange",
-  //   icon: <Shuffle className="h-5 w-5 flex-shrink-0" />,
-  // },
-  // {
-  //   label: "Discount and Promotions",
-  //   href: "/discountPromoList",
-  //   icon: <Percent className="h-5 w-5 flex-shrink-0" />,
-  // },
 ];
 
 export default Layout;
