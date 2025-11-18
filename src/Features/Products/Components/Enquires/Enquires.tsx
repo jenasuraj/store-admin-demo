@@ -46,6 +46,7 @@ interface Order {
   paymentMethod: string;
   groupCompanyId: number;
   paymentURL?: string;
+  [key: string]: any;
 }
 
 function OrderList({

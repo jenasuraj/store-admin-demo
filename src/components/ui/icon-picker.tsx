@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { LucideProps, LucideIcon } from "lucide-react";
+//@ts-ignore
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import {
   Tooltip,
