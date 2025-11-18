@@ -2,12 +2,15 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "./store";
 import { BASE_URL } from "../lib/constants";
 import { toast } from "sonner";
+import { Module } from "@/components/sidebarManager/sidebarSlice";
 
 export interface User {
   id: string;
   username: string;
   authority_id: number;
   authority: string;
+  path: string;
+  modules: Module[] | [];
   [key: string]: any;
 }
 
@@ -30,14 +33,14 @@ export const userLogin = createAsyncThunk(
   async (data: any, thunkAPI) => {
     try {
       const response = await fetch(`${BASE_URL}/API/Login/Check`, {
-        method: "POST",        
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
       });
       const result = await response.json();
-      
+
       if (response.status === 200) {
         toast.success("Login successful", { duration: 800 });
         localStorage.setItem("token", `${"Bearer " + result?.accesstoken}`);
@@ -60,7 +63,10 @@ const userSlice = createSlice({
       state.isAuthenticated = false;
       localStorage.removeItem("token");
     },
-
+     setAuth: (state, action) => {
+      state.user = action.payload;
+      state.isAuthenticated = true;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(userLogin.pending, (state) => {
@@ -81,6 +87,6 @@ const userSlice = createSlice({
 
 export default userSlice.reducer;
 
-export const { logout  } = userSlice.actions;
+export const { logout, setAuth } = userSlice.actions;
 
 export const selectUser = (state: RootState) => state.user;

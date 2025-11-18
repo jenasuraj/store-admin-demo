@@ -1,28 +1,23 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { useEffect } from "react";
 import Home from "./Features/Home/Home";
 import Masters from "./Features/Masters/Masters";
 import LoginPage from "./Features/Auth/Login";
 import ProtectedRoutes from "./components/Protected";
-import AddCompany from "./Features/AddCompany/AddCompany";
 import Collections from "./Features/Collections/Collections";
 import axios from "axios";
-import { BASE_URL } from "./lib/constants";
 import AddProducts from "./Features/Products/AddProducts";
 import { toast } from "sonner";
 import Mapping from "./Features/Mapping/Mapping";
 import ProductList from "./Features/Products/Components/ProductList";
-import InventoryList from "./Features/inventory/Inventory";
-import TransactionHistory from "./Features/transactionHistory/TransactionHistory";
 import NewOrder from "./Features/Orders/Order";
-import Returns from "./Features/Returns/Returns";
-import Exchange from "./Features/Exchange/Exchange";
-import DiscountForm from "./Features/Discounts/DiscountForm";
-import DiscountList from "./Features/Discounts/DiscountList";
-import DiscountPromoTabs from "./pages/DiscountPromoTabs";
 import LandingPage from "./Features/LandingPage/LandingPage";
 import Enquires from "./Features/Products/Components/Enquires/Enquires";
-// import AllProduct from "./Features/Products/Components/AllProduct";
+import LedgerDashboard from "./pages/LedgerDashboard";
+import LedgerMaster from "./pages/ledger-masters";
+import LedgerPage from "./pages/LedgerSheet";
+import EntriesPage from "./pages/LedgerEntry";
+import SidebarManager from "./pages/sidebar-manager";
+import CompanyManager from "./pages/CompanyManager";
 
 axios.interceptors.request.use(
   function (config) {
@@ -56,14 +51,13 @@ axios.interceptors.response.use(
 );
 
 function App() {
-
   const router = createBrowserRouter([
     {
       path: "/",
       element: <ProtectedRoutes />,
       children: [
         {
-          path: "",
+          path: "/home",
           element: <Home />,
         },
         {
@@ -75,35 +69,20 @@ function App() {
           element: <Mapping />,
         },
         {
-          path: "/add-company",
-          element: <AddCompany />,
+          path: "/manage-company",
+          element: <CompanyManager />,
         },
         {
           path: "/collections",
           element: <Collections />,
         },
         {
-          path: "/inventory",
-          element: <InventoryList />,
-        }, {
-          path: '/enquires',
-          element: <Enquires />
+          path: "/enquires",
+          element: <Enquires />,
         },
         {
           path: "/orders",
           element: <NewOrder />,
-        },
-        {
-          path: "/returns",
-          element: <Returns />,
-        },
-        {
-          path: "/exchange",
-          element: <Exchange />,
-        },
-        {
-          path: "/transaction",
-          element: <TransactionHistory />,
         },
         {
           path: "/product",
@@ -113,30 +92,36 @@ function App() {
               element: <AddProducts />,
             },
             {
-              path: '/product/addLandingPage',
-              element: <LandingPage />
-
-
+              path: "/product/addLandingPage",
+              element: <LandingPage />,
             },
-            // {
-            //   path: '/product/allproduct',
-            //   element: <AllProduct />
-
-            // },
-
             {
               path: "/product/list",
               element: <ProductList />,
             },
           ],
         },
+
         {
-          path: "/discountPromoList",
-          element: <DiscountPromoTabs />,
+          path: "sidebar-manager",
+          element: <SidebarManager />,
         },
         {
-          path: "/createDiscountPromo",
-          element: <DiscountForm />,
+          path: "/ledger-dashboard",
+          element: <LedgerDashboard />,
+        },
+        {
+          path: "/ledger-sheet",
+          element: <LedgerPage />,
+        },
+        {
+          path: "/ledger-masters",
+          element: <LedgerMaster />,
+        },
+        {
+          path: "/ledger/product-list",
+          element: <EntriesPage />,
+          // element: <CreateEntryPage />,
         },
       ],
     },
