@@ -60,13 +60,16 @@ function MultiSelectCombobox({
   const [expanded, setExpanded] = useState(false);
 
   const toggle = useCallback(
-    (v: string) =>
-      setSelectedValues(prev =>
+
+  (v: string) =>
+    //@ts-ignore
+    setSelectedValues(prev =>
         prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v]
       ),
     [setSelectedValues]
   );
   const remove = useCallback(
+  //@ts-ignore
     (v: string) => setSelectedValues(prev => prev.filter(x => x !== v)),
     [setSelectedValues]
   );

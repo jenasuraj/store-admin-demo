@@ -10,20 +10,14 @@ import ProductTypeSlice from "../Features/Masters/ProductType/productTypeSlice";
 import ProductTypeAttributeSlice from "../Features/Mapping/ProductTypeAttribute/productTypeAttributeSlice";
 import AttributeSlice from "../Features/Masters/Attribute/attributeSlice";
 import AttributeValuesSlice from "../Features/Masters/AttributeValues/attributeValuesSlice";
-import { inventorySlice } from "./inventorySlice";
 import { orderSlice } from "./OrderSlice";
 import { packedOrderSlice } from "./packedOrderSlice";
 import { deliverOrderSlice } from "./deliveredOrderSlice";
 import { pendingOrderSlice } from "./pendingOrderSlice";
 import { shippedOrderSlice } from "./shippedOrderSlice";
 import { orderStatusSlice } from "@/Features/Masters/OrderStatus/orderStatusSlice";
-import { returnSlice } from "./ReturnSlice";
-import { exchangeSlice } from "./ExchangeSlice";
 import { productSlice } from "./ProductSlice";
 import { collectionSlice } from "@/Features/Collections/collectionSlice";
-import { discountSlice } from "./DiscountSlice";
-import { promoSlice } from "./PromoSlice";
-import { offerSlice } from "./OfferSlice";
 import { grpCompaniesSlice } from "@/app/grpCompaniesSlice";
 import { sidebarSlice } from "@/components/sidebarManager/sidebarSlice";
 import { companiesSlice } from "@/app/companySlice";
@@ -36,20 +30,14 @@ const reducers = {
   productTypeAttribute: ProductTypeAttributeSlice,
   attribute: AttributeSlice,
   attributeValue: AttributeValuesSlice,
-  inventory: inventorySlice.reducer,
   order: orderSlice.reducer,
   orderStatus: orderStatusSlice.reducer,
-  return: returnSlice.reducer,
-  exchange: exchangeSlice.reducer,
   packedorder: packedOrderSlice.reducer,
   pendingOrder: pendingOrderSlice.reducer,
   deliverOrder: deliverOrderSlice.reducer,
   shippedOrder: shippedOrderSlice.reducer,
   product: productSlice.reducer,
   collection: collectionSlice.reducer,
-  discount: discountSlice.reducer,
-  promo: promoSlice.reducer,
-  offer: offerSlice.reducer,
   sidebarManager: sidebarSlice.reducer,
   grpCompanies: grpCompaniesSlice.reducer,
   companies: companiesSlice.reducer,
