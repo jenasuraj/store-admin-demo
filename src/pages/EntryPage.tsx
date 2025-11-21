@@ -1,15 +1,659 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+// import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+// import { Button } from '@/components/ui/button';
+// import { Input } from '@/components/ui/input';
+// import { Label } from '@/components/ui/label';
+// import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+// import { Badge } from '@/components/ui/badge';
+// import { Card, CardContent } from '@/components/ui/card';
+// import {
+//   Command,
+//   CommandEmpty,
+//   CommandGroup,
+//   CommandInput,
+//   CommandItem,
+//   CommandList
+// } from '@/components/ui/command';
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogFooter,
+//   DialogHeader,
+//   DialogTitle,
+// } from "@/components/ui/dialog";
+// import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+// import { 
+//   CheckIcon, 
+//   ChevronsUpDownIcon, 
+//   XIcon, 
+//   Upload, 
+//   ArrowLeft, 
+//   Loader2, 
+//   Eye,
+//   Trash2,
+//   Copy
+// } from 'lucide-react';
+// import { useNavigate } from 'react-router-dom';
+// import { useAppDispatch, useAppSelector } from '@/app/hooks';
+// import { fetchCustomers } from '@/app/customerSlice';
+// import { 
+//   fetchLedgerProducts, 
+//   resetProductList, 
+//   ledgerProductsDataType 
+// } from '@/app/ledgerProductsSlice';
+// import { toast } from 'sonner';
+// import axios from 'axios';
+// import { BASE_URL } from '@/lib/constants';
+// import { cn } from '@/lib/utils';
+// import { format } from 'date-fns';
+
+// // --- Types ---
+
+// interface PriceListItem {
+//   price: number;
+//   productId: number;
+//   productName: string;
+//   basePrice: number;
+// }
+
+// interface CustomerPriceList {
+//   id: number;
+//   userid: number;
+//   name: string;
+//   productPrices: PriceListItem[];
+// }
+
+// interface LedgerRowItem {
+//   internalId: string;
+//   date: string; 
+//   productId: number;
+//   productName: string;
+//   defaultSku: string;
+  
+//   width: number;
+//   height: number;
+//   sqft: number;
+  
+//   basePrice: number;
+//   ratePerPiece: number;
+  
+//   quantity: number;
+//   extraCharge: number;
+//   amount: number;
+  
+//   location: string;
+//   imageUrl: string;
+//   isUploading?: boolean; // For UI loading state
+// }
+
+// // --- API Services (Images) ---
+
+// const uploadImageAPI = async (file: File): Promise<string> => {
+//   const formData = new FormData();
+//   formData.append('file', file);
+//   // Assuming standard multipart upload
+//   const response = await axios.post(`${BASE_URL}/api/user/upload?folder=products`, formData, {
+//     headers: { 'Content-Type': 'multipart/form-data' }
+//   });
+//   return response.data.url; 
+// };
+
+// const deleteImageAPI = async (imageUrl: string) => {
+//   // Sending URL or ID to delete
+//   await axios.delete(`${BASE_URL}/api/user/delete-blob?url=${imageUrl}`);
+// };
+
+// // --- Components ---
+
+// // 1. Multi-Select Combobox (Restored)
+// function MultiSelectCombobox({
+//   items,
+//   selectedProductIds,
+//   onToggle,
+//   priceListMap,
+//   searchTerm,
+//   setSearchTerm,
+//   loading,
+//   hasMore,
+//   onLoadMore
+// }: {
+//   items: ledgerProductsDataType[];
+//   selectedProductIds: number[];
+//   onToggle: (product: ledgerProductsDataType) => void;
+//   priceListMap: Record<number, number>;
+//   searchTerm: string;
+//   setSearchTerm: (v: string) => void;
+//   loading: boolean;
+//   hasMore: boolean;
+//   onLoadMore: (node: HTMLDivElement) => void;
+// }) {
+//   const [open, setOpen] = useState(false);
+
+//   return (
+//     <Popover open={open} onOpenChange={setOpen}>
+//       <PopoverTrigger asChild>
+//         <Button variant="outline" role="combobox" className="w-full justify-between text-left font-normal h-auto min-h-[30px]">
+//            <div className="flex flex-wrap gap-1">
+//              {selectedProductIds.length > 0 ? (
+//                 <span className="py-0">{selectedProductIds.length} products selected</span>
+//              ) : (
+//                 <span className="text-muted-foreground py-0">Search & Select Products...</span>
+//              )}
+//            </div>
+//           <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+//         </Button>
+//       </PopoverTrigger>
+//       <PopoverContent className="w-[500px] p-0" align="start">
+//         <Command shouldFilter={false}>
+//           <CommandInput 
+//             placeholder="Search products..." 
+//             value={searchTerm}
+//             onValueChange={setSearchTerm}
+//           />
+//           <CommandList className="max-h-[300px] overflow-y-auto">
+//             {loading && items.length === 0 && (
+//                <div className="p-4 text-center flex justify-center"><Loader2 className="h-4 w-4 animate-spin mr-2"/> Loading...</div>
+//             )}
+//             {items.length === 0 && !loading && <CommandEmpty>No products found.</CommandEmpty>}
+            
+//             <CommandGroup>
+//               {items.map(item => {
+//                 const isSelected = selectedProductIds.includes(item.productId);
+//                 const isSpecial = priceListMap.hasOwnProperty(item.productId);
+//                 const price = isSpecial ? priceListMap[item.productId] : item.attributes?.[0]?.price ?? 0;
+
+//                 return (
+//                   <CommandItem
+//                     key={item.productId}
+//                     value={item.name}
+//                     onSelect={() => onToggle(item)}
+//                   >
+//                     <div className="flex items-center w-full">
+//                       <div className={cn(
+//                         "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+//                         isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
+//                       )}>
+//                         <CheckIcon className="h-4 w-4" />
+//                       </div>
+//                       <div className="flex flex-col flex-1">
+//                         <span className="flex items-center gap-2 font-medium">
+//                           {item.name}
+//                           {isSpecial && (
+//                             <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-green-100 text-green-800">
+//                               ₹{price} (Special)
+//                             </Badge>
+//                           )}
+//                         </span>
+//                         <span className="text-xs text-muted-foreground">
+//                           SKU: {item.defaultSku} | Base: ₹{price}
+//                         </span>
+//                       </div>
+//                     </div>
+//                   </CommandItem>
+//                 );
+//               })}
+//             </CommandGroup>
+            
+//             {!loading && hasMore && (
+//               <div ref={onLoadMore} className="p-2 flex justify-center items-center w-full h-8">
+//                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+//               </div>
+//             )}
+//           </CommandList>
+//         </Command>
+//       </PopoverContent>
+//     </Popover>
+//   );
+// }
+
+// // 2. Customer Combobox (Local Search)
+// function CustomerCombobox({ 
+//   customers, 
+//   selectedCustomerId, 
+//   onSelect 
+// }: { 
+//   customers: any[], 
+//   selectedCustomerId: string, 
+//   onSelect: (id: string) => void 
+// }) {
+//   const [open, setOpen] = useState(false);
+//   const selectedCustomer = customers.find(c => (c.id || c.customerId).toString() === selectedCustomerId);
+
+//   return (
+//     <Popover open={open} onOpenChange={setOpen}>
+//       <PopoverTrigger asChild>
+//         <Button
+//           variant="outline"
+//           role="combobox"
+//           aria-expanded={open}
+//           className="w-full justify-between"
+//         >
+//           {selectedCustomer ? `${selectedCustomer.firstname} ${selectedCustomer.lastname || ''}` : "Select customer..."}
+//           <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+//         </Button>
+//       </PopoverTrigger>
+//       <PopoverContent className="w-[300px] sm:w-[400px] p-0">
+//         <Command>
+//           <CommandInput placeholder="Search customer..." />
+//           <CommandList>
+//             <CommandEmpty>No customer found.</CommandEmpty>
+//             <CommandGroup>
+//               {customers.map((customer) => {
+//                  const id = (customer.id || customer.customerId).toString();
+//                  return (
+//                   <CommandItem
+//                     key={id}
+//                     value={`${customer.firstname} ${customer.lastname || ''}`}
+//                     onSelect={() => {
+//                       onSelect(id);
+//                       setOpen(false);
+//                     }}
+//                   >
+//                     <CheckIcon
+//                       className={cn(
+//                         "mr-2 h-4 w-4",
+//                         selectedCustomerId === id ? "opacity-100" : "opacity-0"
+//                       )}
+//                     />
+//                     {customer.firstname} {customer.lastname}
+//                   </CommandItem>
+//                 );
+//               })}
+//             </CommandGroup>
+//           </CommandList>
+//         </Command>
+//       </PopoverContent>
+//     </Popover>
+//   );
+// }
+
+// // --- Main Page ---
+
+// export default function CreateEntryPage() {
+//   const navigate = useNavigate();
+//   const dispatch = useAppDispatch();
+
+//   const { customers } = useAppSelector((state) => state.customer);
+//   const { 
+//     infiniteList: products, 
+//     hasMore, 
+//     loading: fetchingProducts, 
+//     currentPage, 
+//     isSearching 
+//   } = useAppSelector((state) => state.ledgerProducts);
+
+//   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+//   const [rows, setRows] = useState<LedgerRowItem[]>([]);
+//   const [priceList, setPriceList] = useState<CustomerPriceList | null>(null);
+//   const [isLoadingPriceList, setIsLoadingPriceList] = useState(false);
+//   const [searchTerm, setSearchTerm] = useState("");
+//   const observer = useRef<IntersectionObserver | null>(null);
+
+//   const [previewImage, setPreviewImage] = useState<{ url: string, internalId: string } | null>(null);
+
+//   // --- Init ---
+//   useEffect(() => {
+//     dispatch(fetchCustomers());
+//   }, [dispatch]);
+
+//   // --- Fetch Price List ---
+//   useEffect(() => {
+//     if (!selectedCustomerId) {
+//       setPriceList(null);
+//       return;
+//     }
+//     const fetchPriceList = async () => {
+//       setIsLoadingPriceList(true);
+//       try {
+//         const response = await axios.get(`${BASE_URL}/api/pricelist/${selectedCustomerId}`);
+//         if (Array.isArray(response.data) && response.data.length > 0) {
+//           setPriceList(response.data[0]);
+//           toast.success(`Applied: ${response.data[0].name}`);
+//         } else {
+//           setPriceList(null);
+//         }
+//       } catch (error) {
+//         setPriceList(null);
+//       } finally {
+//         setIsLoadingPriceList(false);
+//       }
+//     };
+//     fetchPriceList();
+//   }, [selectedCustomerId]);
+
+//   const priceListMap = useMemo(() => {
+//     const map: Record<number, number> = {};
+//     if (priceList && priceList.productPrices) {
+//       priceList.productPrices.forEach(p => map[p.productId] = p.price);
+//     }
+//     return map;
+//   }, [priceList]);
+
+//   // --- Product Search ---
+//   useEffect(() => {
+//     const timer = setTimeout(() => {
+//         dispatch(fetchLedgerProducts({ page: 0, size: 10, search: searchTerm }));
+//     }, 500);
+//     return () => clearTimeout(timer);
+//   }, [searchTerm, dispatch]);
+
+//   const lastElementRef = useCallback(
+//     (node: HTMLDivElement) => {
+//       if (fetchingProducts) return;
+//       if (observer.current) observer.current.disconnect();
+//       if (!isSearching && hasMore) {
+//         observer.current = new IntersectionObserver((entries) => {
+//           if (entries[0].isIntersecting) {
+//             dispatch(fetchLedgerProducts({ page: currentPage + 1, size: 10, search: "" }));
+//           }
+//         });
+//         if (node) observer.current.observe(node);
+//       }
+//     },
+//     [fetchingProducts, hasMore, currentPage, isSearching, dispatch]
+//   );
+
+//   // --- Row Logic ---
+
+//   const handleProductToggle = (product: ledgerProductsDataType) => {
+//     const existingRows = rows.filter(r => r.productId === product.productId);
+    
+//     if (existingRows.length > 0) {
+//       // Deselect: Remove all rows for this product
+//       // (If user wants to keep one but remove others, they should use the X button on the row)
+//       setRows(prev => prev.filter(r => r.productId !== product.productId));
+//     } else {
+//       // Select: Add new row
+//       addRow(product);
+//     }
+//   };
+
+//   const addRow = (product: ledgerProductsDataType) => {
+//     const basePrice = priceListMap[product.productId] ?? product.attributes?.[0]?.price ?? 0;
+//     const width = 1, height = 1, sqft = 1;
+    
+//     const newRow: LedgerRowItem = {
+//       internalId: Math.random().toString(36).substr(2, 9),
+//       date: format(new Date(), 'yyyy-MM-dd'),
+//       productId: product.productId,
+//       productName: product.name,
+//       defaultSku: product.defaultSku,
+//       width, height, sqft,
+//       basePrice,
+//       ratePerPiece: basePrice * sqft,
+//       quantity: 1,
+//       extraCharge: 0,
+//       amount: basePrice * sqft,
+//       location: '',
+//       imageUrl: ''
+//     };
+//     setRows(prev => [...prev, newRow]);
+//   };
+
+//   const duplicateRow = (row: LedgerRowItem) => {
+//     const newRow = { ...row, internalId: Math.random().toString(36).substr(2, 9) };
+//     setRows(prev => [...prev, newRow]);
+//   };
+
+//   const updateRow = (internalId: string, field: keyof LedgerRowItem, value: any) => {
+//     setRows(prev => prev.map(row => {
+//       if (row.internalId !== internalId) return row;
+//       const updated = { ...row, [field]: value };
+
+//       // Calculations
+//       if (['width', 'height', 'sqft', 'basePrice', 'ratePerPiece', 'quantity', 'extraCharge'].includes(field)) {
+//         if (field === 'width' || field === 'height') {
+//           updated.sqft = parseFloat((updated.width * updated.height).toFixed(2));
+//         }
+//         if (['width', 'height', 'sqft', 'basePrice'].includes(field)) {
+//            updated.ratePerPiece = parseFloat((updated.sqft * updated.basePrice).toFixed(2));
+//         }
+//         updated.amount = parseFloat(((updated.ratePerPiece * updated.quantity) + updated.extraCharge).toFixed(2));
+//       }
+//       return updated;
+//     }));
+//   };
+
+//   const removeRow = (internalId: string) => {
+//     setRows(prev => prev.filter(r => r.internalId !== internalId));
+//   };
+
+//   // --- Image API Handling ---
+
+//   const handleImageUpload = async (internalId: string, file: File) => {
+//     // Set loading state for this row (optional UI enhancement)
+//     updateRow(internalId, 'isUploading', true);
+//     try {
+//       const uploadedUrl = await uploadImageAPI(file);
+//       updateRow(internalId, 'imageUrl', uploadedUrl);
+//       toast.success("Image uploaded");
+//     } catch (error) {
+//       console.error(error);
+//       toast.error("Image upload failed");
+//     } finally {
+//       updateRow(internalId, 'isUploading', false);
+//     }
+//   };
+
+//   const handleDeleteImage = async (internalId: string, imageUrl: string) => {
+//     try {
+//       await deleteImageAPI(imageUrl);
+//       updateRow(internalId, 'imageUrl', '');
+//       setPreviewImage(null);
+//       toast.success("Image deleted");
+//     } catch (error) {
+//       console.error(error);
+//       toast.error("Failed to delete image");
+//     }
+//   };
+
+//   // --- Submit ---
+//   const handleSubmit = async () => {
+//     if (!selectedCustomerId) return toast.error('Select a customer');
+//     if (rows.length === 0) return toast.error('Add items to ledger');
+
+//     const payload = {
+//       customerId: parseInt(selectedCustomerId),
+//       paymentStatus: "PENDING",
+//       totalAmount: rows.reduce((sum, r) => sum + r.amount, 0),
+//       items: rows.map(r => ({
+//         date: r.date,
+//         productId: r.productId,
+//         height: r.height,
+//         width: r.width,
+//         sqft: r.sqft,
+//         basePrice: r.basePrice,
+//         ratePerPiece: r.ratePerPiece,
+//         quantity: r.quantity,
+//         location: r.location || "",
+//         imageUrl: r.imageUrl || "",
+//         extraCharge: r.extraCharge,
+//         amount: r.amount
+//       }))
+//     };
+
+//     try {
+//       const res = await axios.post(`${BASE_URL}/api/ledger/create`, payload);
+//       if (res.status === 200 || res.status === 201) {
+//         toast.success('Ledger entry created!');
+//         navigate('/ledger-sheet');
+//       }
+//     } catch (e) {
+//       toast.error('Failed to create entry');
+//     }
+//   };
+
+//   const grandTotal = rows.reduce((sum, r) => sum + r.amount, 0);
+
+//   return (
+//     <main className="min-h-screen bg-background p-4 md:p-8">
+//       <div className="max-w-[1600px] mx-auto space-y-6">
+        
+//         <div className="flex items-center gap-4">
+//           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+//             <ArrowLeft className="h-5 w-5" />
+//           </Button>
+//           <div>
+//             <h1 className="text-2xl font-bold tracking-tight">Create Ledger Entry</h1>
+//             <p className="text-muted-foreground text-sm">New sales entry</p>
+//           </div>
+//         </div>
+
+//         <Card>
+//           <CardContent className="p-6 grid gap-6 md:grid-cols-2 items-end">
+//             <div className="flex flex-col gap-2">
+//               <Label>Customer</Label>
+//               <CustomerCombobox 
+//                 customers={customers} 
+//                 selectedCustomerId={selectedCustomerId} 
+//                 onSelect={setSelectedCustomerId} 
+//               />
+//             </div>
+
+//             <div className="flex flex-col gap-2">
+//               <Label>Add Products</Label>
+//               <MultiSelectCombobox 
+//                 items={products}
+//                 selectedProductIds={rows.map(r => r.productId)}
+//                 onToggle={handleProductToggle}
+//                 priceListMap={priceListMap}
+//                 searchTerm={searchTerm}
+//                 setSearchTerm={setSearchTerm}
+//                 loading={fetchingProducts}
+//                 hasMore={hasMore}
+//                 onLoadMore={lastElementRef}
+//               />
+//             </div>
+//           </CardContent>
+//         </Card>
+
+//         {isLoadingPriceList ? (
+//            <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="h-3 w-3 animate-spin"/> Loading Price List...</div>
+//         ) : priceList && (
+//            <div className="bg-blue-50 border border-blue-100 text-blue-700 px-4 py-2 rounded-md text-sm">
+//               Active Price List: <strong>{priceList.name}</strong>
+//            </div>
+//         )}
+
+//         {rows.length > 0 && (
+//           <Card>
+//             <CardContent className="p-0 overflow-hidden">
+//               <div className="overflow-x-auto">
+//                 <Table>
+//                   <TableHeader>
+//                     <TableRow className="bg-muted/50">
+//                       <TableHead className="w-[130px]">Date</TableHead>
+//                       <TableHead className="min-w-[120px]">Product</TableHead>
+//                       <TableHead className="min-w-[100px]">Width</TableHead>
+//                       <TableHead className="min-w-[100px]">Height</TableHead>
+//                       <TableHead className="min-w-[100px]">SqFt</TableHead>
+//                       <TableHead className="min-w-[100px]">Rate</TableHead>
+//                       <TableHead className="min-w-[100px]">1pc Rate</TableHead>
+//                       <TableHead className="min-w-[100px]">Qty</TableHead>
+//                       <TableHead className="min-w-[130px]">Extra Charges</TableHead>
+//                       <TableHead className="min-w-[120px]">Location</TableHead>
+//                       <TableHead className="min-w-[60px]">Imgage</TableHead>
+//                       <TableHead className="min-w-[100px] text-right">Amount</TableHead>
+//                       <TableHead className="min-w-[80px]"></TableHead>
+//                     </TableRow>
+//                   </TableHeader>
+//                   <TableBody>
+//                     {rows.map((row) => (
+//                       <TableRow key={row.internalId}>
+//                         <TableCell>
+//                           <Input type="date" className="h-8 w-full px-2 text-xs" value={row.date} onChange={(e) => updateRow(row.internalId, 'date', e.target.value)} />
+//                         </TableCell>
+                        
+//                         <TableCell>
+//                           <div className="flex flex-col">
+//                             <span className="font-medium text-sm truncate max-w-[150px]" title={row.productName}>{row.productName}</span>
+//                             {priceListMap[row.productId] !== undefined && <span className="text-[10px] text-green-600">Special Price</span>}
+//                           </div>
+//                         </TableCell>
+
+//                         <TableCell><Input type="number" min={0} className="h-8 px-1" value={row.width} onChange={(e) => updateRow(row.internalId, 'width', parseFloat(e.target.value))} /></TableCell>
+//                         <TableCell><Input type="number" min={0} className="h-8 px-1" value={row.height} onChange={(e) => updateRow(row.internalId, 'height', parseFloat(e.target.value))} /></TableCell>
+//                         <TableCell><Input type="number" min={0} className="h-8 px-1 bg-muted/30" value={row.sqft} onChange={(e) => updateRow(row.internalId, 'sqft', parseFloat(e.target.value))} /></TableCell>
+//                         <TableCell><Input type="number" min={0} className="h-8 px-1" value={row.basePrice} onChange={(e) => updateRow(row.internalId, 'basePrice', parseFloat(e.target.value))} /></TableCell>
+//                         <TableCell><Input type="number" min={0} className="h-8 px-1 font-medium text-blue-600" value={row.ratePerPiece} onChange={(e) => updateRow(row.internalId, 'ratePerPiece', parseFloat(e.target.value))} /></TableCell>
+//                         <TableCell><Input type="number" className="h-8 px-1" min={1} value={row.quantity} onChange={(e) => updateRow(row.internalId, 'quantity', parseFloat(e.target.value))} /></TableCell>
+//                         <TableCell><Input type="number" min={0} className="h-8 px-1" value={row.extraCharge} onChange={(e) => updateRow(row.internalId, 'extraCharge', parseFloat(e.target.value))} /></TableCell>
+//                         <TableCell><Input className="h-8 px-1" value={row.location} onChange={(e) => updateRow(row.internalId, 'location', e.target.value)} /></TableCell>
+
+//                         {/* Image Upload */}
+//                         <TableCell>
+//                            <div className="flex justify-center items-center">
+//                              {row.isUploading ? (
+//                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground"/>
+//                              ) : row.imageUrl ? (
+//                                <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600" onClick={() => setPreviewImage({ url: row.imageUrl, internalId: row.internalId })}>
+//                                  <Eye className="h-4 w-4"/>
+//                                </Button>
+//                              ) : (
+//                                <>
+//                                  <Label htmlFor={`file-${row.internalId}`} className="cursor-pointer hover:bg-muted p-1 rounded-md">
+//                                     <Upload className="h-4 w-4 text-muted-foreground"/>
+//                                  </Label>
+//                                  <Input id={`file-${row.internalId}`} type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageUpload(row.internalId, e.target.files[0])} />
+//                                </>
+//                              )}
+//                            </div>
+//                         </TableCell>
+
+//                         <TableCell><div className="text-right font-bold text-sm">₹{row.amount.toFixed(0)}</div></TableCell>
+
+//                         <TableCell>
+//                           <div className="flex gap-1">
+//                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-blue-500 hover:bg-blue-50" title="Duplicate" onClick={() => duplicateRow(row)}>
+//                                <Copy className="h-3 w-3" />
+//                             </Button>
+//                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500 hover:bg-red-50" onClick={() => removeRow(row.internalId)}>
+//                               <XIcon className="h-4 w-4" />
+//                             </Button>
+//                           </div>
+//                         </TableCell>
+//                       </TableRow>
+//                     ))}
+//                   </TableBody>
+//                 </Table>
+//               </div>
+//               <div className="p-4 bg-muted/20 border-t flex justify-end items-center gap-4">
+//                 <div className="text-xl font-bold">Grand Total: <span className="text-primary">₹{grandTotal.toLocaleString('en-IN')}</span></div>
+//               </div>
+//             </CardContent>
+//           </Card>
+//         )}
+
+//         <div className="flex justify-end gap-4 pb-10">
+//           <Button variant="outline" size="lg" onClick={() => navigate('/')}>Cancel</Button>
+//           <Button size="lg" onClick={handleSubmit} disabled={rows.length === 0}>Submit Ledger Entry</Button>
+//         </div>
+//       </div>
+
+//       {/* Image Preview & Delete Modal */}
+//       <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+//         <DialogContent>
+//           <DialogHeader><DialogTitle>Image Preview</DialogTitle></DialogHeader>
+//           <div className="flex justify-center p-4 bg-muted/10 rounded-md">
+//             {previewImage && <img src={previewImage.url} alt="Preview" className="max-h-[400px] w-auto object-contain rounded-md" />}
+//           </div>
+//           <DialogFooter className="sm:justify-between">
+//             <Button variant="outline" onClick={() => setPreviewImage(null)}>Close</Button>
+//             <Button variant="destructive" onClick={() => previewImage && handleDeleteImage(previewImage.internalId, previewImage.url)}>
+//               <Trash2 className="w-4 h-4 mr-2" /> Delete Image
+//             </Button>
+//           </DialogFooter>
+//         </DialogContent>
+//       </Dialog>
+//     </main>
+//   );
+// }
+
+
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -20,542 +664,817 @@ import {
   CommandItem,
   CommandList
 } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CheckIcon, ChevronsUpDownIcon, XIcon } from 'lucide-react';
 import {
-  PriceListProduct,
-  getCustomers,
-  Customer,
-  saveLedgerEntry,
-  LedgerEntry,
-  LedgerItem,
-  getPriceLists,
-  PriceList,
-  initializeDemoData
-} from '@/lib/storage';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { 
+  CheckIcon, 
+  ChevronsUpDownIcon, 
+  XIcon, 
+  Upload, 
+  ArrowLeft, 
+  Loader2, 
+  Eye,
+  Trash2,
+  Copy,
+  Save,
+  AlertTriangle
+} from 'lucide-react';
+import { useNavigate, useBlocker } from 'react-router-dom'; // Added useBlocker
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { fetchCustomers } from '@/app/customerSlice';
+import { 
+  fetchLedgerProducts, 
+  resetProductList, 
+  ledgerProductsDataType 
+} from '@/app/ledgerProductsSlice';
+import { toast } from 'sonner';
+import axios from 'axios';
+import { BASE_URL } from '@/lib/constants';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
-interface ComboboxItem {
-  value: string;
-  label: string;
+// --- Types ---
+
+interface PriceListItem {
+  price: number;
+  productId: number;
+  productName: string;
+  basePrice: number;
 }
 
-interface MultiSelectComboboxProps {
-  items: ComboboxItem[];
-  selectedValues: string[];
-  setSelectedValues: (v: string[]) => void;
-  placeholder?: string;
-  title?: string;
+interface CustomerPriceList {
+  id: number;
+  userid: number;
+  name: string;
+  productPrices: PriceListItem[];
 }
 
-function MultiSelectCombobox({
-  items,
-  selectedValues,
-  setSelectedValues,
-  placeholder = 'Select items...',
-  title = 'Select items'
-}: MultiSelectComboboxProps) {
-  const [open, setOpen] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-
-  const toggle = useCallback(
-
-  (v: string) =>
-    //@ts-ignore
-    setSelectedValues(prev =>
-        prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v]
-      ),
-    [setSelectedValues]
-  );
-  const remove = useCallback(
-  //@ts-ignore
-    (v: string) => setSelectedValues(prev => prev.filter(x => x !== v)),
-    [setSelectedValues]
-  );
-
-  const max = 2;
-  const visible = expanded ? selectedValues : selectedValues.slice(0, max);
-  const hidden = selectedValues.length - visible.length;
-
-  return (
-    <div className="w-full max-w-md space-y-2">
-      <Label>{title}</Label>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="h-auto min-h-8 w-full justify-between hover:bg-transparent"
-          >
-            <div className="flex flex-wrap items-center gap-1 pr-2.5">
-              {selectedValues.length ? (
-                <>
-                  {visible.map(v => {
-                    const it = items.find(i => i.value === v);
-                    return it ? (
-                      <Badge key={v} variant="outline">
-                        {it.label}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-4 ml-1"
-                          onClick={e => {
-                            e.stopPropagation();
-                            remove(v);
-                          }}
-                          asChild
-                        >
-                          <span>
-                            <XIcon className="size-3" />
-                          </span>
-                        </Button>
-                      </Badge>
-                    ) : null;
-                  })}
-                  {(hidden > 0 || expanded) && (
-                    <Badge
-                      variant="outline"
-                      onClick={e => {
-                        e.stopPropagation();
-                        setExpanded(p => !p);
-                      }}
-                    >
-                      {expanded ? 'Show Less' : `+${hidden} more`}
-                    </Badge>
-                  )}
-                </>
-              ) : (
-                <span className="text-muted-foreground">{placeholder}</span>
-              )}
-            </div>
-            <ChevronsUpDownIcon
-              size={16}
-              className="text-muted-foreground/80 shrink-0"
-            />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-80 p-0 max-h-96 overflow-y-auto">
-          <Command>
-            <CommandInput placeholder="Search..." />
-            <CommandList>
-              <CommandEmpty>No items found.</CommandEmpty>
-              <CommandGroup>
-                {items.map(it => (
-                  <CommandItem
-                    key={it.value}
-                    value={it.value}
-                    onSelect={() => toggle(it.value)}
-                  >
-                    <span className="truncate">{it.label}</span>
-                    {selectedValues.includes(it.value) && (
-                      <CheckIcon size={16} className="ml-auto" />
-                    )}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
-}
-
-interface LedgerItemForm {
-  productId: string;
-  description: string;
+interface LedgerRowItem {
+  internalId: string;
+  date: string; 
+  productId: number;
+  productName: string;
+  defaultSku: string;
+  
   width: number;
   height: number;
-  extraCharges: number;
+  sqft: number;
+  
+  basePrice: number;
+  ratePerPiece: number;
+  
   quantity: number;
-  price: number;
+  extraCharge: number;
+  amount: number;
+  
+  location: string;
+  imageUrl: string;
+  isUploading?: boolean; 
 }
+
+// Interface for Draft Data in LocalStorage
+interface DraftData {
+  selectedCustomerId: string;
+  rows: LedgerRowItem[];
+  savedAt: number;
+}
+
+// --- API Services (Images) ---
+
+const uploadImageAPI = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await axios.post(`${BASE_URL}/api/user/upload?folder=products`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return response.data.url; 
+};
+
+const deleteImageAPI = async (imageUrl: string) => {
+  // Sending URL or ID to delete
+  await axios.delete(`${BASE_URL}/api/user/delete-blob?url=${imageUrl}`);
+};
+
+// --- Components ---
+
+// 1. Multi-Select Combobox 
+function MultiSelectCombobox({
+  items,
+  selectedProductIds,
+  onToggle,
+  priceListMap,
+  searchTerm,
+  setSearchTerm,
+  loading,
+  hasMore,
+  onLoadMore
+}: {
+  items: ledgerProductsDataType[];
+  selectedProductIds: number[];
+  onToggle: (product: ledgerProductsDataType) => void;
+  priceListMap: Record<number, number>;
+  searchTerm: string;
+  setSearchTerm: (v: string) => void;
+  loading: boolean;
+  hasMore: boolean;
+  onLoadMore: (node: HTMLDivElement) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" role="combobox" className="w-full justify-between text-left font-normal h-auto min-h-[30px]">
+           <div className="flex flex-wrap gap-1">
+             {selectedProductIds.length > 0 ? (
+                <span className="py-0">{selectedProductIds.length} products selected</span>
+             ) : (
+                <span className="text-muted-foreground py-0">Search & Select Products...</span>
+             )}
+           </div>
+          <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[500px] p-0" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput 
+            placeholder="Search products..." 
+            value={searchTerm}
+            onValueChange={setSearchTerm}
+          />
+          <CommandList className="max-h-[300px] overflow-y-auto">
+            {loading && items.length === 0 && (
+               <div className="p-4 text-center flex justify-center"><Loader2 className="h-4 w-4 animate-spin mr-2"/> Loading...</div>
+            )}
+            {items.length === 0 && !loading && <CommandEmpty>No products found.</CommandEmpty>}
+            
+            <CommandGroup>
+              {items.map(item => {
+                const isSelected = selectedProductIds.includes(item.productId);
+                const isSpecial = priceListMap.hasOwnProperty(item.productId);
+                const price = isSpecial ? priceListMap[item.productId] : item.attributes?.[0]?.price ?? 0;
+
+                return (
+                  <CommandItem
+                    key={item.productId}
+                    value={item.name}
+                    onSelect={() => onToggle(item)}
+                  >
+                    <div className="flex items-center w-full">
+                      <div className={cn(
+                        "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                        isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
+                      )}>
+                        <CheckIcon className="h-4 w-4" />
+                      </div>
+                      <div className="flex flex-col flex-1">
+                        <span className="flex items-center gap-2 font-medium">
+                          {item.name}
+                          {isSpecial && (
+                            <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-green-100 text-green-800">
+                              ₹{price} (Special)
+                            </Badge>
+                          )}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          SKU: {item.defaultSku} | Base: ₹{price}
+                        </span>
+                      </div>
+                    </div>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+            
+            {!loading && hasMore && (
+              <div ref={onLoadMore} className="p-2 flex justify-center items-center w-full h-8">
+                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// 2. Customer Combobox
+function CustomerCombobox({ 
+  customers, 
+  selectedCustomerId, 
+  onSelect 
+}: { 
+  customers: any[], 
+  selectedCustomerId: string, 
+  onSelect: (id: string) => void 
+}) {
+  const [open, setOpen] = useState(false);
+  const selectedCustomer = customers.find(c => (c.id || c.customerId).toString() === selectedCustomerId);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between"
+        >
+          {selectedCustomer ? `${selectedCustomer.firstname} ${selectedCustomer.lastname || ''}` : "Select customer..."}
+          <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[300px] sm:w-[400px] p-0">
+        <Command>
+          <CommandInput placeholder="Search customer..." />
+          <CommandList>
+            <CommandEmpty>No customer found.</CommandEmpty>
+            <CommandGroup>
+              {customers.map((customer) => {
+                 const id = (customer.id || customer.customerId).toString();
+                 return (
+                  <CommandItem
+                    key={id}
+                    value={`${customer.firstname} ${customer.lastname || ''}`}
+                    onSelect={() => {
+                      onSelect(id);
+                      setOpen(false);
+                    }}
+                  >
+                    <CheckIcon
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        selectedCustomerId === id ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {customer.firstname} {customer.lastname}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// --- Main Page ---
 
 export default function CreateEntryPage() {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
 
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [priceLists, setPriceLists] = useState<PriceList[]>([]);
+  const { customers } = useAppSelector((state) => state.customer);
+  const { 
+    infiniteList: products, 
+    hasMore, 
+    loading: fetchingProducts, 
+    currentPage, 
+    isSearching 
+  } = useAppSelector((state) => state.ledgerProducts);
+
+  // Form State
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
-  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
-  const [items, setItems] = useState<Record<string, LedgerItemForm>>({});
-  const [mounted, setMounted] = useState(false);
+  const [rows, setRows] = useState<LedgerRowItem[]>([]);
+  const [priceList, setPriceList] = useState<CustomerPriceList | null>(null);
+  const [isLoadingPriceList, setIsLoadingPriceList] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const observer = useRef<IntersectionObserver | null>(null);
 
-  /* --------------------- Load Data --------------------- */
+  // UI State
+  const [previewImage, setPreviewImage] = useState<{ url: string, internalId: string } | null>(null);
+
+  // Navigation & Draft Logic State
+  const [showSaveDraftDialog, setShowSaveDraftDialog] = useState(false);
+  const [showRestoreDialog, setShowRestoreDialog] = useState(false);
+  const [draftToRestore, setDraftToRestore] = useState<DraftData | null>(null);
+
+  // --- 1. Check for Draft on Mount ---
   useEffect(() => {
-    setMounted(true);
-    initializeDemoData();
-    setCustomers(getCustomers());
-    setPriceLists(getPriceLists());
-  }, []);
-
-  /* --------------------- Derived Data --------------------- */
-  const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
-  const customerPriceList = selectedCustomer
-    ? priceLists.find(pl => pl.id === selectedCustomer.priceListId)
-    : null;
-  const availableProducts = customerPriceList ? customerPriceList.products : [];
-
-  /* --------------------- Memoized Combobox Items (MUST be before early return) --------------------- */
-  const productItems = useMemo(() => {
-    return availableProducts.map(p => ({
-      value: p.id,
-      label: `${p.name} (${p.width}×${p.height}) - ₹${p.price}`
-    }));
-  }, [availableProducts]);
-
-
-
-  /* --------------------- 1. Sync Rows with Selected Products --------------------- */
-  useEffect(() => {
-    const next: Record<string, LedgerItemForm> = {};
-
-    selectedProductIds.forEach(id => {
-      const prod = availableProducts.find(p => p.id === id);
-      if (!prod) return;
-
-      const existing = items[id];
-      next[id] = {
-        productId: id,
-        description: existing?.description ?? '',
-        width: existing?.width ?? 1,
-        height: existing?.height ?? 1,
-        extraCharges: existing?.extraCharges ?? 0,
-        quantity: existing?.quantity ?? 1,
-        price: prod.price
-      };
-    });
-
-    setItems(next);
-  }, [selectedProductIds, availableProducts]);
-
-  /* --------------------- 2. Remove Invalid Products on Price List Change --------------------- */
-  useEffect(() => {
-    if (customerPriceList) {
-      const stillValid = selectedProductIds.filter(id =>
-        availableProducts.some(p => p.id === id)
-      );
-      if (stillValid.length !== selectedProductIds.length) {
-        setSelectedProductIds(stillValid);
+    const savedDraft = localStorage.getItem('ledger_draft');
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft) as DraftData;
+        // Validate basic structure
+        if (parsed.selectedCustomerId || (parsed.rows && parsed.rows.length > 0)) {
+          setDraftToRestore(parsed);
+          setShowRestoreDialog(true);
+        }
+      } catch (e) {
+        console.error("Failed to parse draft", e);
+        localStorage.removeItem('ledger_draft');
       }
     }
-  }, [selectedCustomerId, availableProducts, selectedProductIds]);
+    dispatch(fetchCustomers());
+  }, [dispatch]);
 
-  /* --------------------- Handlers --------------------- */
-  const handleItemChange = (pid: string, field: string, value: any) => {
-    setItems(prev => ({
-      ...prev,
-      [pid]: { ...prev[pid], [field]: value }
+  // --- 2. Browser Refresh Protection (beforeunload) ---
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (selectedCustomerId || rows.length > 0) {
+        e.preventDefault();
+        e.returnValue = ''; // Standard browser behavior triggers a generic warning
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [selectedCustomerId, rows]);
+
+  // --- 3. Internal Navigation Blocking (useBlocker) ---
+  // Detects if user tries to navigate via React Router while form is dirty
+  const isDirty = (selectedCustomerId !== '' || rows.length > 0);
+  
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isDirty && currentLocation.pathname !== nextLocation.pathname
+  );
+
+  useEffect(() => {
+    if (blocker.state === "blocked") {
+      setShowSaveDraftDialog(true);
+    }
+  }, [blocker]);
+
+
+  // --- Draft & Navigation Handlers ---
+
+  const handleSaveDraft = () => {
+    const draftData: DraftData = {
+      selectedCustomerId,
+      rows,
+      savedAt: Date.now()
+    };
+    localStorage.setItem('ledger_draft', JSON.stringify(draftData));
+    toast.success("Progress saved as draft");
+    
+    // If triggered by navigation blocker
+    if (blocker.state === "blocked") {
+      blocker.proceed();
+    }
+    setShowSaveDraftDialog(false);
+  };
+
+  const handleDiscardAndExit = async () => {
+    // 1. Delete images from server (Cleanup)
+    const deletePromises = rows
+      .filter(r => r.imageUrl && r.imageUrl.startsWith('http')) // Simple check for valid URL
+      .map(r => deleteImageAPI(r.imageUrl));
+    
+    if (deletePromises.length > 0) {
+      toast.info(`Cleaning up ${deletePromises.length} uploaded images...`);
+      try {
+        await Promise.all(deletePromises);
+      } catch (error) {
+        console.error("Failed to clean up images", error);
+      }
+    }
+
+    // 2. Clear local storage if any
+    // localStorage.removeItem('ledger_draft'); // Requirement implies "reset the form", optional if we want to kill old drafts too
+
+    // 3. Reset Form (State)
+    setSelectedCustomerId('');
+    setRows([]);
+    
+    // 4. Proceed with navigation
+    if (blocker.state === "blocked") {
+      blocker.proceed();
+    }
+    setShowSaveDraftDialog(false);
+  };
+
+  const handleCancelNavigation = () => {
+    if (blocker.state === "blocked") {
+      blocker.reset();
+    }
+    setShowSaveDraftDialog(false);
+  };
+
+  const handleRestoreDraft = () => {
+    if (draftToRestore) {
+      setSelectedCustomerId(draftToRestore.selectedCustomerId);
+      setRows(draftToRestore.rows);
+      toast.success("Draft restored");
+    }
+    setShowRestoreDialog(false);
+  };
+
+  const handleDiscardDraftOnStart = () => {
+    localStorage.removeItem('ledger_draft');
+    setDraftToRestore(null);
+    setShowRestoreDialog(false);
+    toast.info("Draft discarded");
+  };
+
+
+  // --- Fetch Price List ---
+  useEffect(() => {
+    if (!selectedCustomerId) {
+      setPriceList(null);
+      return;
+    }
+    const fetchPriceList = async () => {
+      setIsLoadingPriceList(true);
+      try {
+        const response = await axios.get(`${BASE_URL}/api/pricelist/${selectedCustomerId}`);
+        if (Array.isArray(response.data) && response.data.length > 0) {
+          setPriceList(response.data[0]);
+          toast.success(`Applied: ${response.data[0].name}`);
+        } else {
+          setPriceList(null);
+        }
+      } catch (error) {
+        setPriceList(null);
+      } finally {
+        setIsLoadingPriceList(false);
+      }
+    };
+    fetchPriceList();
+  }, [selectedCustomerId]);
+
+  const priceListMap = useMemo(() => {
+    const map: Record<number, number> = {};
+    if (priceList && priceList.productPrices) {
+      priceList.productPrices.forEach(p => map[p.productId] = p.price);
+    }
+    return map;
+  }, [priceList]);
+
+  // --- Product Search ---
+  useEffect(() => {
+    const timer = setTimeout(() => {
+        dispatch(fetchLedgerProducts({ page: 0, size: 10, search: searchTerm }));
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm, dispatch]);
+
+  const lastElementRef = useCallback(
+    (node: HTMLDivElement) => {
+      if (fetchingProducts) return;
+      if (observer.current) observer.current.disconnect();
+      if (!isSearching && hasMore) {
+        observer.current = new IntersectionObserver((entries) => {
+          if (entries[0].isIntersecting) {
+            dispatch(fetchLedgerProducts({ page: currentPage + 1, size: 10, search: "" }));
+          }
+        });
+        if (node) observer.current.observe(node);
+      }
+    },
+    [fetchingProducts, hasMore, currentPage, isSearching, dispatch]
+  );
+
+  // --- Row Logic ---
+
+  const handleProductToggle = (product: ledgerProductsDataType) => {
+    const existingRows = rows.filter(r => r.productId === product.productId);
+    
+    if (existingRows.length > 0) {
+      // Deselect: Remove all rows for this product
+      // (If user wants to keep one but remove others, they should use the X button on the row)
+      setRows(prev => prev.filter(r => r.productId !== product.productId));
+    } else {
+      // Select: Add new row
+      addRow(product);
+    }
+  };
+
+  const addRow = (product: ledgerProductsDataType) => {
+    const basePrice = priceListMap[product.productId] ?? product.attributes?.[0]?.price ?? 0;
+    const width = 1, height = 1, sqft = 1;
+    
+    const newRow: LedgerRowItem = {
+      internalId: Math.random().toString(36).substr(2, 9),
+      date: format(new Date(), 'yyyy-MM-dd'),
+      productId: product.productId,
+      productName: product.name,
+      defaultSku: product.defaultSku,
+      width, height, sqft,
+      basePrice,
+      ratePerPiece: basePrice * sqft,
+      quantity: 1,
+      extraCharge: 0,
+      amount: basePrice * sqft,
+      location: '',
+      imageUrl: ''
+    };
+    setRows(prev => [...prev, newRow]);
+  };
+
+  const duplicateRow = (row: LedgerRowItem) => {
+    const newRow = { ...row, internalId: Math.random().toString(36).substr(2, 9) };
+    setRows(prev => [...prev, newRow]);
+  };
+
+  const updateRow = (internalId: string, field: keyof LedgerRowItem, value: any) => {
+    setRows(prev => prev.map(row => {
+      if (row.internalId !== internalId) return row;
+      const updated = { ...row, [field]: value };
+
+      // Calculations
+      if (['width', 'height', 'sqft', 'basePrice', 'ratePerPiece', 'quantity', 'extraCharge'].includes(field)) {
+        if (field === 'width' || field === 'height') {
+          updated.sqft = parseFloat((updated.width * updated.height).toFixed(2));
+        }
+        if (['width', 'height', 'sqft', 'basePrice'].includes(field)) {
+           updated.ratePerPiece = parseFloat((updated.sqft * updated.basePrice).toFixed(2));
+        }
+        updated.amount = parseFloat(((updated.ratePerPiece * updated.quantity) + updated.extraCharge).toFixed(2));
+      }
+      return updated;
     }));
   };
 
-  const calc = (prod: PriceListProduct, form: LedgerItemForm) => {
-    const sqft = form.width * form.height;
-    const pcRate = form.price * sqft;
-    const total = pcRate * form.quantity + form.extraCharges;
-    return { sqft, pcRate, total };
+  const removeRow = (internalId: string) => {
+    setRows(prev => prev.filter(r => r.internalId !== internalId));
   };
 
-  const handleSubmit = () => {
-    if (!selectedCustomerId) return alert('Select a customer');
-    if (!selectedProductIds.length) return alert('Select at least one product');
+  // --- Image API Handling ---
 
-    const ledgerItems: LedgerItem[] = selectedProductIds
-      .map(pid => {
-        const form = items[pid];
-        const prod = availableProducts.find(p => p.id === pid);
-        if (!form || !prod) return null;
-        const { sqft, pcRate, total } = calc(prod, form);
-        return {
-          id: Date.now().toString() + Math.random(),
-          productId: pid,
-          description: form.description,
-          width: form.width,
-          height: form.height,
-          sqft,
-          rate: form.price,
-          pcRate,
-          quantity: form.quantity,
-          extraCharges: form.extraCharges,
-          amount: total
-        };
-      })
-      .filter(Boolean) as LedgerItem[];
+  const handleImageUpload = async (internalId: string, file: File) => {
+    // Set loading state for this row (optional UI enhancement)
+    updateRow(internalId, 'isUploading', true);
+    try {
+      const uploadedUrl = await uploadImageAPI(file);
+      updateRow(internalId, 'imageUrl', uploadedUrl);
+      toast.success("Image uploaded");
+    } catch (error) {
+      console.error(error);
+      toast.error("Image upload failed");
+    } finally {
+      updateRow(internalId, 'isUploading', false);
+    }
+  };
 
-    const totalAmount = ledgerItems.reduce((s, i) => s + i.amount, 0);
+  const handleDeleteImage = async (internalId: string, imageUrl: string) => {
+    try {
+      await deleteImageAPI(imageUrl);
+      updateRow(internalId, 'imageUrl', '');
+      setPreviewImage(null);
+      toast.success("Image deleted");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete image");
+    }
+  };
 
-    const entry: LedgerEntry = {
-      id: Date.now().toString(),
-      date: new Date().toISOString().split('T')[0],
-      customerId: selectedCustomerId,
-      items: ledgerItems,
-      totalAmount,
-      createdAt: new Date().toISOString()
+  // --- Submit ---
+  const handleSubmit = async () => {
+    if (!selectedCustomerId) return toast.error('Select a customer');
+    if (rows.length === 0) return toast.error('Add items to ledger');
+
+    const payload = {
+      customerId: parseInt(selectedCustomerId),
+      paymentStatus: "PENDING",
+      totalAmount: rows.reduce((sum, r) => sum + r.amount, 0),
+      items: rows.map(r => ({
+        date: r.date,
+        productId: r.productId,
+        height: r.height,
+        width: r.width,
+        sqft: r.sqft,
+        basePrice: r.basePrice,
+        ratePerPiece: r.ratePerPiece,
+        quantity: r.quantity,
+        location: r.location || "",
+        imageUrl: r.imageUrl || "",
+        extraCharge: r.extraCharge,
+        amount: r.amount
+      }))
     };
 
-    saveLedgerEntry(entry);
-    alert('Entry created successfully!');
-    navigate('/ledger-sheet');
-    };
-    
-      /* --------------------- Early Return (after all hooks!) --------------------- */
-  if (!mounted) return null;
+    try {
+      const res = await axios.post(`${BASE_URL}/api/ledger/create`, payload);
+      if (res.status === 200 || res.status === 201) {
+        toast.success('Ledger entry created!');
+        // Clear draft if successful
+        localStorage.removeItem('ledger_draft');
+        // Manually reset form before navigation to avoid blocker
+        setSelectedCustomerId('');
+        setRows([]);
+        navigate('/ledger-sheet');
+      }
+    } catch (e) {
+      toast.error('Failed to create entry');
+    }
+  };
 
-  /* --------------------- Total Calculation --------------------- */
-  let totalAmount = 0;
-  Object.entries(items).forEach(([id, form]) => {
-    const prod = availableProducts.find(p => p.id === id);
-    if (prod) totalAmount += calc(prod, form).total;
-  });
+  const grandTotal = rows.reduce((sum, r) => sum + r.amount, 0);
 
-  /* --------------------- Render --------------------- */
   return (
-    <main className="min-h-screen bg-background p-8">
-      <div className="max-w-6xl mx-auto">
-        <Button
-          variant="ghost"
-          className="mb-6 gap-2"
-          onClick={() => navigate('/')}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
-        </Button>
-
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Create Ledger Entry
-          </h1>
-          <p className="text-muted-foreground">
-            Select a customer and products to create a new ledger entry
-          </p>
+    <main className="min-h-screen bg-background p-4 md:p-8">
+      <div className="max-w-[1600px] mx-auto space-y-6">
+        
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Create Ledger Entry</h1>
+            <p className="text-muted-foreground text-sm">New sales entry</p>
+          </div>
         </div>
 
-        {customers.length === 0 ? (
+        <Card>
+          <CardContent className="p-6 grid gap-6 md:grid-cols-2 items-end">
+            <div className="flex flex-col gap-2">
+              <Label>Customer</Label>
+              <CustomerCombobox 
+                customers={customers} 
+                selectedCustomerId={selectedCustomerId} 
+                onSelect={setSelectedCustomerId} 
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label>Add Products</Label>
+              <MultiSelectCombobox 
+                items={products}
+                selectedProductIds={rows.map(r => r.productId)}
+                onToggle={handleProductToggle}
+                priceListMap={priceListMap}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                loading={fetchingProducts}
+                hasMore={hasMore}
+                onLoadMore={lastElementRef}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {isLoadingPriceList ? (
+           <div className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="h-3 w-3 animate-spin"/> Loading Price List...</div>
+        ) : priceList && (
+           <div className="bg-blue-50 border border-blue-100 text-blue-700 px-4 py-2 rounded-md text-sm">
+              Active Price List: <strong>{priceList.name}</strong>
+           </div>
+        )}
+
+        {rows.length > 0 && (
           <Card>
-            <CardContent className="pt-6">
-              <p className="text-muted-foreground text-center py-8">
-                Please add customers first
-              </p>
+            <CardContent className="p-0 overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-[130px]">Date</TableHead>
+                      <TableHead className="min-w-[120px]">Product</TableHead>
+                      <TableHead className="min-w-[100px]">Width</TableHead>
+                      <TableHead className="min-w-[100px]">Height</TableHead>
+                      <TableHead className="min-w-[100px]">SqFt</TableHead>
+                      <TableHead className="min-w-[100px]">Rate</TableHead>
+                      <TableHead className="min-w-[100px]">1pc Rate</TableHead>
+                      <TableHead className="min-w-[100px]">Qty</TableHead>
+                      <TableHead className="min-w-[130px]">Extra Charges</TableHead>
+                      <TableHead className="min-w-[120px]">Location</TableHead>
+                      <TableHead className="min-w-[60px]">Imgage</TableHead>
+                      <TableHead className="min-w-[100px] text-right">Amount</TableHead>
+                      <TableHead className="min-w-[80px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((row) => (
+                      <TableRow key={row.internalId}>
+                        <TableCell>
+                          <Input type="date" className="h-8 w-full px-2 text-xs" value={row.date} onChange={(e) => updateRow(row.internalId, 'date', e.target.value)} />
+                        </TableCell>
+                        
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm truncate max-w-[150px]" title={row.productName}>{row.productName}</span>
+                            {priceListMap[row.productId] !== undefined && <span className="text-[10px] text-green-600">Special Price</span>}
+                          </div>
+                        </TableCell>
+
+                        <TableCell><Input type="number" min={0} className="h-8 px-1" value={row.width} onChange={(e) => updateRow(row.internalId, 'width', parseFloat(e.target.value))} /></TableCell>
+                        <TableCell><Input type="number" min={0} className="h-8 px-1" value={row.height} onChange={(e) => updateRow(row.internalId, 'height', parseFloat(e.target.value))} /></TableCell>
+                        <TableCell><Input type="number" min={0} className="h-8 px-1 bg-muted/30" value={row.sqft} onChange={(e) => updateRow(row.internalId, 'sqft', parseFloat(e.target.value))} /></TableCell>
+                        <TableCell><Input type="number" min={0} className="h-8 px-1" value={row.basePrice} onChange={(e) => updateRow(row.internalId, 'basePrice', parseFloat(e.target.value))} /></TableCell>
+                        <TableCell><Input type="number" min={0} className="h-8 px-1 font-medium text-blue-600" value={row.ratePerPiece} onChange={(e) => updateRow(row.internalId, 'ratePerPiece', parseFloat(e.target.value))} /></TableCell>
+                        <TableCell><Input type="number" className="h-8 px-1" min={1} value={row.quantity} onChange={(e) => updateRow(row.internalId, 'quantity', parseFloat(e.target.value))} /></TableCell>
+                        <TableCell><Input type="number" min={0} className="h-8 px-1" value={row.extraCharge} onChange={(e) => updateRow(row.internalId, 'extraCharge', parseFloat(e.target.value))} /></TableCell>
+                        <TableCell><Input className="h-8 px-1" value={row.location} onChange={(e) => updateRow(row.internalId, 'location', e.target.value)} /></TableCell>
+
+                        {/* Image Upload */}
+                        <TableCell>
+                           <div className="flex justify-center items-center">
+                             {row.isUploading ? (
+                               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground"/>
+                             ) : row.imageUrl ? (
+                               <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600" onClick={() => setPreviewImage({ url: row.imageUrl, internalId: row.internalId })}>
+                                 <Eye className="h-4 w-4"/>
+                               </Button>
+                             ) : (
+                               <>
+                                 <Label htmlFor={`file-${row.internalId}`} className="cursor-pointer hover:bg-muted p-1 rounded-md">
+                                    <Upload className="h-4 w-4 text-muted-foreground"/>
+                                 </Label>
+                                 <Input id={`file-${row.internalId}`} type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && handleImageUpload(row.internalId, e.target.files[0])} />
+                               </>
+                             )}
+                           </div>
+                        </TableCell>
+
+                        <TableCell><div className="text-right font-bold text-sm">{row.amount.toFixed(0)}</div></TableCell>
+
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-blue-500 hover:bg-blue-50" title="Duplicate" onClick={() => duplicateRow(row)}>
+                               <Copy className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500 hover:bg-red-50" onClick={() => removeRow(row.internalId)}>
+                              <XIcon className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="p-4 bg-muted/20 border-t flex justify-end items-center gap-4">
+                <div className="text-xl font-bold">Grand Total: <span className="text-primary">{grandTotal.toLocaleString('en-IN')}</span></div>
+              </div>
             </CardContent>
           </Card>
-        ) : (
-          <div className="space-y-6">
-            {/* Customer */}
-            <div>
-              <Label htmlFor="customer">Customer Name</Label>
-              <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Select a customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map(c => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name} ({c.mobile})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {selectedCustomer && customerPriceList && (
-              <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  Price List:{' '}
-                  <span className="font-semibold text-foreground">
-                    {customerPriceList.name}
-                  </span>
-                </p>
-              </div>
-            )}
-
-            {/* Products */}
-            {selectedCustomer && availableProducts.length > 0 && (
-              <div>
-                <MultiSelectCombobox
-                  items={productItems}
-                  selectedValues={selectedProductIds}
-                  setSelectedValues={setSelectedProductIds}
-                  placeholder="Select products..."
-                  title="Products"
-                />
-              </div>
-            )}
-
-            {/* Table */}
-            {selectedProductIds.length > 0 && (
-              <div className="space-y-3">
-                <Label className="text-base font-semibold">
-                  Product Details
-                </Label>
-                <div className="border rounded-lg overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead>Product</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Width</TableHead>
-                        <TableHead>Height</TableHead>
-                        <TableHead>Sq Ft</TableHead>
-                        <TableHead>Rate (1×1)</TableHead>
-                        <TableHead>1 pc Rate</TableHead>
-                        <TableHead>Qty</TableHead>
-                        <TableHead>Extra Charges</TableHead>
-                        <TableHead>Amount</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedProductIds.map(pid => {
-                        const form = items[pid];
-                        const prod = availableProducts.find(p => p.id === pid);
-                        if (!form || !prod) return null;
-                        const { sqft, pcRate, total } = calc(prod, form);
-
-                        return (
-                          <TableRow key={pid}>
-                            <TableCell className="font-medium whitespace-nowrap">
-                              {prod.name}
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              <Input
-                                type="text"
-                                value={form.description}
-                                onChange={e =>
-                                  handleItemChange(pid, 'description', e.target.value)
-                                }
-                                placeholder="Optional"
-                                className="text-xs"
-                              />
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              <Input
-                                type="number"
-                                min="0.1"
-                                step="0.1"
-                                value={form.width}
-                                onChange={e =>
-                                  handleItemChange(
-                                    pid,
-                                    'width',
-                                    parseFloat(e.target.value) || 1
-                                  )
-                                }
-                                className="w-16 text-xs"
-                              />
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              <Input
-                                type="number"
-                                min="0.1"
-                                step="0.1"
-                                value={form.height}
-                                onChange={e =>
-                                  handleItemChange(
-                                    pid,
-                                    'height',
-                                    parseFloat(e.target.value) || 1
-                                  )
-                                }
-                                className="w-16 text-xs"
-                              />
-                            </TableCell>
-                            <TableCell className="text-sm font-medium">
-                              {sqft.toFixed(2)}
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={form.price}
-                                onChange={e =>
-                                  handleItemChange(
-                                    pid,
-                                    'price',
-                                    parseFloat(e.target.value) || prod.price
-                                  )
-                                }
-                                className="w-20 text-xs"
-                              />
-                            </TableCell>
-                            <TableCell className="text-sm font-medium">
-                              ₹{pcRate.toFixed(2)}
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              <Input
-                                type="number"
-                                min="1"
-                                step="1"
-                                value={form.quantity}
-                                onChange={e =>
-                                  handleItemChange(
-                                    pid,
-                                    'quantity',
-                                    parseInt(e.target.value) || 1
-                                  )
-                                }
-                                className="w-16 text-xs"
-                              />
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={form.extraCharges}
-                                onChange={e =>
-                                  handleItemChange(
-                                    pid,
-                                    'extraCharges',
-                                    parseFloat(e.target.value) || 0
-                                  )
-                                }
-                                placeholder="0"
-                                className="w-20 text-xs"
-                              />
-                            </TableCell>
-                            <TableCell className="text-sm font-semibold">
-                              ₹{total.toFixed(2)}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            )}
-
-            {/* Total */}
-            {selectedProductIds.length > 0 && (
-              <div className="flex justify-end">
-                <div className="space-y-2 text-right">
-                  <p className="text-lg font-semibold">
-                    Total:{' '}
-                    <span className="text-2xl text-blue-600">
-                      ₹{totalAmount.toFixed(2)}
-                    </span>
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex gap-3 justify-end">
-              <Button variant="outline" onClick={() => navigate('/')}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={!selectedCustomerId || selectedProductIds.length === 0}
-              >
-                Save Entry
-              </Button>
-            </div>
-          </div>
         )}
+
+        <div className="flex justify-end gap-4 pb-10">
+          <Button variant="outline" size="lg" onClick={() => navigate('/')}>Cancel</Button>
+          <Button size="lg" onClick={handleSubmit} disabled={rows.length === 0}>Submit Ledger Entry</Button>
+        </div>
       </div>
+
+      {/* Image Preview & Delete Modal */}
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Image Preview</DialogTitle></DialogHeader>
+          <div className="flex justify-center p-4 bg-muted/10 rounded-md">
+            {previewImage && <img src={previewImage.url} alt="Preview" className="max-h-[400px] w-auto object-contain rounded-md" />}
+          </div>
+          <DialogFooter className="sm:justify-between">
+            <Button variant="outline" onClick={() => setPreviewImage(null)}>Close</Button>
+            <Button variant="destructive" onClick={() => previewImage && handleDeleteImage(previewImage.internalId, previewImage.url)}>
+              <Trash2 className="w-4 h-4 mr-2" /> Delete Image
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Navigation Guard Dialog (Save Draft?) */}
+      <Dialog  open={showSaveDraftDialog} onOpenChange={handleCancelNavigation}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Unsaved Changes
+            </DialogTitle>
+            <DialogDescription className='text-gray-800'>
+              You have unsaved changes in this ledger entry. 
+              If you leave now, your progress will be lost.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 text-sm">
+            Would you like to save this as a draft to finish later?
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="destructive" onClick={handleDiscardAndExit}>No, Discard & Exit</Button>
+            <Button onClick={handleSaveDraft} className="gap-2"><Save className="h-4 w-4" /> Yes, Save Draft</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Restore Draft Dialog (On Mount) */}
+      <Dialog open={showRestoreDialog} onOpenChange={(open) => !open && handleDiscardDraftOnStart()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="h-5 w-5 text-blue-500" />
+              Restore Draft?
+            </DialogTitle>
+            <DialogDescription>
+              We found an unfinished ledger entry saved on {draftToRestore && new Date(draftToRestore.savedAt).toLocaleDateString()}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+             Would you like to continue where you left off?
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleDiscardDraftOnStart}>Discard Draft</Button>
+            <Button onClick={handleRestoreDraft}>Restore</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </main>
   );
 }

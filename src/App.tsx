@@ -18,6 +18,7 @@ import LedgerPage from "./pages/LedgerSheet";
 import EntriesPage from "./pages/LedgerEntry";
 import SidebarManager from "./pages/sidebar-manager";
 import CompanyManager from "./pages/CompanyManager";
+import CreateEntryPage from "./pages/EntryPage";
 
 axios.interceptors.request.use(
   function (config) {
@@ -119,9 +120,9 @@ function App() {
           element: <LedgerMaster />,
         },
         {
-          path: "/ledger/product-list",
-          element: <EntriesPage />,
-          // element: <CreateEntryPage />,
+          path: "/ledger/add",
+          // element: <EntriesPage />,
+          element: <CreateEntryPage />,
         },
       ],
     },

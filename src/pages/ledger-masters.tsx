@@ -1,38 +1,33 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PriceListForm, PriceListsDisplay } from '@/components/ledger/PriceList';
-import { CustomerForm, CustomersDisplay } from '@/components/ledger/CustomerForm';
-import { getPriceLists, getCustomers, deletePriceList, deleteCustomer, PriceList, Customer } from '@/lib/storage';
+import { PriceListForm } from '@/components/ledger/PriceList';
+import PriceListManager from '@/components/ledger/PriceList';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-
-const DEMO_PRODUCTS = [
-  { id: '1', name: 'E+L', height: 1, width: 1 },
-  { id: '2', name: 'E+L+5mm', height: 1, width: 1 },
-  { id: '3', name: 'Satin + Pipe', height: 1, width: 1 },
-  { id: '4', name: 'E+3mm', height: 1, width: 1 },
-  { id: '5', name: 'Eco +3mm', height: 1, width: 1 },
-  { id: '6', name: 'Plain flex', height: 1, width: 1 },
-  { id: '7', name: 'Canvas', height: 1, width: 1 },
-  { id: '8', name: 'Flex new stande', height: 1, width: 1 },
-];
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import CustomerForm from '@/components/ledger/CustomerForm';
 
 export default function LedgerMaster() {
   const navigate = useNavigate();
-  const [priceLists, setPriceLists] = useState<PriceList[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [mounted, setMounted] = useState(false);
+  
+  const currentTab = searchParams.get('tab') || 'customers';
 
   useEffect(() => {
     setMounted(true);
-    setPriceLists(getPriceLists());
-    setCustomers(getCustomers());
   }, []);
 
-  const handleRefresh = () => {
-    setPriceLists(getPriceLists());
-    setCustomers(getCustomers());
+  const handleTabChange = (value: string) => {
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set('tab', value);
+      return newParams;
+    });
+  };
+
+  const handleNavigateToPriceList = (userId: string) => {
+    setSearchParams({ tab: 'priceLists', userId });
   };
 
   if (!mounted) return null;
@@ -54,33 +49,18 @@ export default function LedgerMaster() {
           <p className="text-muted-foreground">Create and manage your price lists and customers</p>
         </div>
 
-        <Tabs defaultValue="priceLists" className="space-y-6">
+        <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList>
-            <TabsTrigger value="priceLists">Price Lists</TabsTrigger>
             <TabsTrigger value="customers">Customers</TabsTrigger>
+            <TabsTrigger value="priceLists">Price Lists</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="priceLists" className="space-y-6">
-            <PriceListForm onSave={handleRefresh} />
-            <PriceListsDisplay 
-              lists={priceLists}
-              onDelete={(id) => {
-                deletePriceList(id);
-                handleRefresh();
-              }}
-            />
-          </TabsContent>
-
           <TabsContent value="customers" className="space-y-6">
-            <CustomerForm priceLists={priceLists} onSave={handleRefresh} />
-            <CustomersDisplay 
-              customers={customers}
-              priceLists={priceLists}
-              onDelete={(id) => {
-                deleteCustomer(id);
-                handleRefresh();
-              }}
-            />
+            <CustomerForm   />
+            {/* <CustomersDisplay /> */}
+          </TabsContent>
+          <TabsContent value="priceLists" className="space-y-6">
+            <PriceListManager/>
           </TabsContent>
         </Tabs>
       </div>

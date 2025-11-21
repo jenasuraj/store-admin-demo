@@ -22,6 +22,9 @@ import { grpCompaniesSlice } from "@/app/grpCompaniesSlice";
 import { sidebarSlice } from "@/components/sidebarManager/sidebarSlice";
 import { companiesSlice } from "@/app/companySlice";
 import { branchCompaniesSlice } from "@/app/branchCompanySlice";
+import customerSlice from "./customerSlice";
+import priceListSlice from "./priceListSlice";
+import ledgerProductsSlice from "./ledgerProductsSlice";
 
 const reducers = {
   user: userSlice,
@@ -42,6 +45,9 @@ const reducers = {
   grpCompanies: grpCompaniesSlice.reducer,
   companies: companiesSlice.reducer,
   branchCompanies: branchCompaniesSlice.reducer,
+  customer: customerSlice,
+  priceList: priceListSlice,
+  ledgerProducts: ledgerProductsSlice,
 };
 
 const rootReducer = combineReducers(reducers);

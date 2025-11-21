@@ -145,7 +145,7 @@ export default function Dashboard() {
               asChild
               className=" text-white"
             >
-              <Link to="/ledger/product-list">Create Entry</Link>
+              <Link to="/ledger/add">Create Entry</Link>
             </Button>
           </div>
         </div>

@@ -162,7 +162,7 @@ const links = [
       },
       {
         label: "All Products",
-        href: "/ledger/product-list",
+        href: "/ledger/add",
         // icon: <Package2 className="h-5 w-5 flex-shrink-0" />,
       },
     ],

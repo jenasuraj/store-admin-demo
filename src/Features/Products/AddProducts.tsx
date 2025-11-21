@@ -84,7 +84,7 @@ interface Variant {
   id: string;
   sku: string;
   price: string;
-  description: string
+  description?: string
   title: string;
   quantity: string;
   Variant: string;
@@ -109,16 +109,16 @@ interface VariantAttribute {
 interface ProductFormData {
   productTypeId: string;
   title: string;
-  subheading: string;
-  description: string;
+  subheading?: string;
+  description?: string;
   status: "draft" | "active";
   subCategory: string;
 }
 
 export const schema = z.object({
   title: z.string(),
-  subheading: z.string().min(1, { message: "Subheading is required" }),
-  description: z.string().min(1, { message: "Description is required" }),
+  subheading: z.string().optional(),
+  description: z.string().optional(),
   status: z.string().min(1, { message: "Status is required" }),
   productTypeId: z.string().min(1, { message: "Product Type is required" }),
   subCategory: z.string().min(1, { message: "Subcategoy is required" }),
@@ -391,7 +391,7 @@ export default function ProductForm() {
       subcategoryId: formData.subCategory,
       name: "",
       subheading: formData.subheading,
-      description: formData.description,
+      description: formData?.description,
       status: formData.status,
       tags,
       defaultSku: defaultVariant?.sku || "",
@@ -401,7 +401,7 @@ export default function ProductForm() {
         ...variant.attributes,
         price: +variant.price,
         quantity: +variant.quantity,
-        description: variant.description,  //issue was the + is making the description to treat like number
+        // description: variant.description,  //issue was the + is making the description to treat like number
         imgs:
           variant.images?.map((img) => ({
             img_Id: img.img_Id,
@@ -588,7 +588,7 @@ export default function ProductForm() {
             >
               {/* Product Type */}
               <div className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-3 gap-6">
                   <div className="space-y-2 ">
                     <Label
                       htmlFor="subCategory "
@@ -717,7 +717,7 @@ export default function ProductForm() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="subheading"
-                    className="after:ml-0.5 after:text-red-500 after:content-['*']"
+                    // className="after:ml-0.5 after:text-red-500 after:content-['*']"
                   >
                     Subheading
                   </Label>
@@ -732,7 +732,7 @@ export default function ProductForm() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="description"
-                    className="after:ml-0.5 after:text-red-500 after:content-['*']"
+                    // className="after:ml-0.5 after:text-red-500 after:content-['*']"
                   >
                     Description
                   </Label>
@@ -869,9 +869,9 @@ export default function ProductForm() {
                             <TableHead className="after:ml-0.5 after:text-red-500 after:content-['*']">
                               Quantity
                             </TableHead>
-                            <TableHead className="after:ml-0.5 after:text-red-500 after:content-['*']">
+                            {/* <TableHead className="after:ml-0.5 after:text-red-500 after:content-['*']">
                               Description
-                            </TableHead>
+                            </TableHead> */}
                             <TableHead>Actions</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -1248,7 +1248,7 @@ export default function ProductForm() {
                               </TableCell>
 
                               {/* Description */}
-                              <TableCell>
+                              {/* <TableCell>
                                 <Input
                                   // type="number"
                                   value={variant.description}
@@ -1267,14 +1267,14 @@ export default function ProductForm() {
                                   (!variant.description ||
                                     +variant.description <= 0 ? (
                                     <p className="text-xs text-red-500 mt-1">
-                                      Quantity is Required
+                                      Description is required
                                     </p>
                                   ) : isNaN(+variant.description) ? (
                                     <p className="text-xs text-red-500 mt-1">
                                       Please enter a valid description
                                     </p>
                                   ) : null)}
-                              </TableCell>
+                              </TableCell> */}
 
                               {/* Actions */}
                               <TableCell>
@@ -1309,7 +1309,9 @@ export default function ProductForm() {
 
                 {/* Tags */}
                 <div className="space-y-2">
-                  <Label className="after:ml-0.5 after:text-red-500 after:content-['*']">
+                  <Label
+                    // className="after:ml-0.5 after:text-red-500 after:content-['*']"
+                  >
                     Product Tags
                   </Label>
                   <div className="flex flex-wrap gap-2 mb-2">
