@@ -1,387 +1,869 @@
-import { useState, useEffect, useMemo } from 'react';
+// import { useState, useEffect } from 'react';
+// import { Button } from '@/components/ui/button';
+// import { Card, CardContent } from '@/components/ui/card';
+// import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+// import { Input } from '@/components/ui/input';
+// import { Label } from '@/components/ui/label';
+// import { Badge } from '@/components/ui/badge';
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogDescription,
+//   DialogFooter,
+//   DialogHeader,
+//   DialogTitle,
+// } from "@/components/ui/dialog";
+// import {
+//   Command,
+//   CommandEmpty,
+//   CommandGroup,
+//   CommandInput,
+//   CommandItem,
+//   CommandList
+// } from '@/components/ui/command';
+// import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+// import {
+//   Plus,
+//   Download,
+//   X,
+//   ChevronDown,
+//   ChevronUp,
+//   Check,
+//   ChevronsUpDown,
+//   Loader2,
+//   ChevronLeft,
+//   ChevronRight,
+//   Eye
+// } from 'lucide-react';
+// import { useNavigate } from 'react-router-dom';
+// import { useAppDispatch, useAppSelector } from '@/app/hooks';
+// import { fetchLedgerEntries, setPage, setFilters, resetFilters } from '@/app/ledgerSheetSlice';
+// import { fetchCustomers } from '@/app/customerSlice';
+// import { cn } from '@/lib/utils';
+// import { format } from 'date-fns';
+
+// // --- Helper Component: Customer Filter ---
+// function CustomerFilterCombobox({
+//   customers,
+//   value,
+//   onChange
+// }: {
+//   customers: any[],
+//   value: string,
+//   onChange: (id: string) => void
+// }) {
+//   const [open, setOpen] = useState(false);
+//   const selectedCustomer = customers.find(c => (c.id || c.customerId).toString() === value);
+
+//   return (
+//     <Popover open={open} onOpenChange={setOpen}>
+//       <PopoverTrigger asChild>
+//         <Button
+//           variant="outline"
+//           role="combobox"
+//           aria-expanded={open}
+//           className="w-full justify-between bg-white border-input"
+//         >
+//           {selectedCustomer ? selectedCustomer.firstname : "Filter by Customer..."}
+//           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+//         </Button>
+//       </PopoverTrigger>
+//       <PopoverContent className="w-[250px] p-0">
+//         <Command>
+//           <CommandInput placeholder="Search customer..." />
+//           <CommandList>
+//             <CommandEmpty>No customer found.</CommandEmpty>
+//             <CommandGroup>
+//               <CommandItem
+//                   value="all_customers_reset_value"
+//                   onSelect={() => {
+//                     onChange("");
+//                     setOpen(false);
+//                   }}
+//                   className="text-muted-foreground italic border-b"
+//                 >
+//                   <X className="mr-2 h-4 w-4" />
+//                   Clear Customer Filter
+//               </CommandItem>
+//               {customers.map((customer) => {
+//                  const id = (customer.id || customer.customerId).toString();
+//                  return (
+//                   <CommandItem
+//                     key={id}
+//                     value={customer.firstname}
+//                     onSelect={() => {
+//                       onChange(id);
+//                       setOpen(false);
+//                     }}
+//                   >
+//                     <Check
+//                       className={cn(
+//                         "mr-2 h-4 w-4",
+//                         value === id ? "opacity-100" : "opacity-0"
+//                       )}
+//                     />
+//                     {customer.firstname} {customer.lastname}
+//                   </CommandItem>
+//                 );
+//               })}
+//             </CommandGroup>
+//           </CommandList>
+//         </Command>
+//       </PopoverContent>
+//     </Popover>
+//   );
+// }
+
+// export default function LedgerSheetPage() {
+//   const navigate = useNavigate();
+//   const dispatch = useAppDispatch();
+
+//   // Redux
+//   const {
+//     entries,
+//     loading,
+//     totalPages,
+//     totalElements,
+//     currentPage,
+//     filterCustomerId,
+//     filterStartDate,
+//     filterEndDate
+//   } = useAppSelector((state) => state.ledgerSheet);
+  
+//   const { customers } = useAppSelector((state) => state.customer);
+
+//   // Local State
+//   const [expandedRows, setExpandedRows] = useState<number[]>([]);
+//   const [showExportDialog, setShowExportDialog] = useState(false);
+  
+//   // Export State
+//   const [exportStart, setExportStart] = useState('');
+//   const [exportEnd, setExportEnd] = useState('');
+//   const [exportCustomer, setExportCustomer] = useState('');
+
+//   // Init
+//   useEffect(() => {
+//     dispatch(fetchCustomers());
+//     dispatch(fetchLedgerEntries());
+//   }, [dispatch]);
+
+//   // --- Filters & Pagination ---
+
+//   const handleFilterChange = (key: 'customerId' | 'startDate' | 'endDate', value: string) => {
+//     // Update state immediately
+//     dispatch(setFilters({ [key]: value }));
+//     // Fetch new data with updated filters (slice logic handles API switch)
+//     dispatch(fetchLedgerEntries());
+//   };
+
+//   const handleResetFilters = () => {
+//     dispatch(resetFilters());
+//     dispatch(fetchLedgerEntries());
+//   };
+
+//   const handlePageChange = (newPage: number) => {
+//     if (newPage >= 0 && newPage < totalPages) {
+//       dispatch(setPage(newPage));
+//       dispatch(fetchLedgerEntries());
+//     }
+//   };
+
+//   const toggleRow = (id: number) => {
+//     setExpandedRows(prev =>
+//       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+//     );
+//   };
+
+//   // --- Render ---
+
+//   return (
+//     <main className="min-h-screen bg-muted/10 p-4 md:p-8 font-sans">
+//       <div className="max-w-[1600px] mx-auto space-y-6">
+        
+//         {/* Header */}
+//         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+//           <div>
+//             <h1 className="text-2xl font-bold tracking-tight text-foreground">Ledger Sheet</h1>
+//             <p className="text-muted-foreground text-sm">Track all journal entries & transactions</p>
+//           </div>
+//           <div className="flex gap-2">
+//             <Button variant="outline" onClick={() => setShowExportDialog(true)} className="gap-2">
+//               <Download className="w-4 h-4" /> Export
+//             </Button>
+//             <Button onClick={() => navigate('/ledger/add')} className="gap-2">
+//               <Plus className="w-4 h-4" /> New Entry
+//             </Button>
+//           </div>
+//         </div>
+
+//         {/* Filters Bar */}
+//         <Card className="border-none shadow-sm bg-white">
+//           <CardContent className="p-4">
+//             <div className="flex flex-col md:flex-row gap-4 items-end">
+              
+//               {/* Date Filters */}
+//               <div className="flex gap-2 items-end">
+//                 <div className="space-y-1">
+//                   <Label className="text-xs text-muted-foreground">From</Label>
+//                   <Input
+//                     type="date"
+//                     className="h-9 w-[140px]"
+//                     value={filterStartDate}
+//                     onChange={(e) => handleFilterChange('startDate', e.target.value)}
+//                   />
+//                 </div>
+//                 <div className="space-y-1">
+//                   <Label className="text-xs text-muted-foreground">To</Label>
+//                   <Input
+//                     type="date"
+//                     className="h-9 w-[140px]"
+//                     value={filterEndDate}
+//                     onChange={(e) => handleFilterChange('endDate', e.target.value)}
+//                   />
+//                 </div>
+//               </div>
+
+//               {/* Customer Filter */}
+//               <div className="flex-1 md:max-w-[300px] space-y-1">
+//                 <Label className="text-xs text-muted-foreground">Customer</Label>
+//                 <CustomerFilterCombobox
+//                   customers={customers}
+//                   value={filterCustomerId}
+//                   onChange={(val) => handleFilterChange('customerId', val)}
+//                 />
+//               </div>
+
+//               {/* Active Filter Indicator & Reset */}
+//               <div className="flex-1 flex items-center justify-end">
+//                  {(filterCustomerId || filterStartDate || filterEndDate) && (
+//                   <Button
+//                     variant="ghost"
+//                     size="sm"
+//                     onClick={handleResetFilters}
+//                     className="text-red-600 hover:text-red-700 hover:bg-red-50 h-9"
+//                   >
+//                     <X className="w-4 h-4 mr-1" /> Clear Filters
+//                   </Button>
+//                  )}
+//               </div>
+
+//             </div>
+//           </CardContent>
+//         </Card>
+
+//         {/* Ledger Table */}
+//         <Card className="border shadow-sm overflow-hidden bg-white">
+//           <div className="overflow-x-auto">
+//             <Table>
+//               <TableHeader>
+//                 <TableRow className="bg-muted/50 hover:bg-muted/50">
+//                   <TableHead className="w-[50px]"></TableHead>
+//                   <TableHead className="w-[150px]">Created At</TableHead>
+//                   <TableHead className="w-[200px]">Customer</TableHead>
+//                   <TableHead className="w-[100px]">Items</TableHead>
+//                   <TableHead>Status</TableHead>
+//                   <TableHead className="text-right">Total Amount</TableHead>
+//                 </TableRow>
+//               </TableHeader>
+//               <TableBody>
+//                 {loading ? (
+//                    <TableRow>
+//                      <TableCell colSpan={6} className="h-32 text-center">
+//                        <div className="flex justify-center items-center gap-2 text-muted-foreground">
+//                          <Loader2 className="h-5 w-5 animate-spin" /> Loading data...
+//                        </div>
+//                      </TableCell>
+//                    </TableRow>
+//                 ) : entries.length === 0 ? (
+//                    <TableRow>
+//                      <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+//                        No ledger entries found.
+//                      </TableCell>
+//                    </TableRow>
+//                 ) : (
+//                   entries.map((entry) => {
+//                     const isExpanded = expandedRows.includes(entry.ledgerId); // Uses ledgerId
+//                     const dateObj = new Date(entry.createdAt);
+
+//                     return (
+//                       <>
+//                         {/* Main Entry Row */}
+//                         <TableRow
+//                           key={`entry-${entry.ledgerId}`}
+//                           className={cn("cursor-pointer transition-colors", isExpanded ? "bg-blue-50/50" : "hover:bg-muted/30")}
+//                           onClick={() => toggleRow(entry.ledgerId)}
+//                         >
+//                           <TableCell>
+//                             {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+//                           </TableCell>
+//                           <TableCell className="font-medium text-sm">
+//                             {format(dateObj, 'dd MMM yyyy')}
+//                             <div className="text-[11px] text-muted-foreground">{format(dateObj, 'hh:mm a')}</div>
+//                           </TableCell>
+//                           <TableCell className="font-semibold text-foreground">
+//                             {entry.customerName}
+//                           </TableCell>
+//                           <TableCell className="text-muted-foreground text-sm">
+//                             {entry.items.length} Items
+//                           </TableCell>
+//                           <TableCell>
+//                             <Badge variant="outline" className={cn(
+//                               "text-[10px] px-2 py-0 h-5",
+//                               entry.paymentStatus === 'PENDING' ? "border-amber-500 text-amber-700 bg-amber-50" : "border-green-500 text-green-700 bg-green-50"
+//                             )}>
+//                               {entry.paymentStatus}
+//                             </Badge>
+//                           </TableCell>
+//                           <TableCell className="text-right font-bold font-mono text-base">
+//                             ₹{entry.totalAmount.toLocaleString('en-IN')}
+//                           </TableCell>
+//                         </TableRow>
+
+//                         {/* Expanded Item Details */}
+//                         {isExpanded && (
+//                           <TableRow className="bg-muted/5 hover:bg-muted/5">
+//                             <TableCell colSpan={6} className="p-0">
+//                               <div className="px-6 py-4 border-b shadow-inner bg-slate-50">
+//                                 <div className="flex justify-between items-center mb-2">
+//                                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Items Breakdown</p>
+//                                   <span className="text-xs text-slate-400">Ledger ID: #{entry.ledgerId}</span>
+//                                 </div>
+                                
+//                                 <div className="border rounded-md overflow-hidden bg-white">
+//                                   <Table>
+//                                     <TableHeader>
+//                                       <TableRow className="bg-slate-100 border-b border-slate-200 hover:bg-slate-100">
+//                                         <TableHead className="h-8 text-[11px] font-bold text-slate-600">Date</TableHead>
+//                                         <TableHead className="h-8 text-[11px] font-bold text-slate-600 text-center">Product ID</TableHead>
+//                                         <TableHead className="h-8 text-[11px] font-bold text-slate-600 text-center">Size (WxH)</TableHead>
+//                                         <TableHead className="h-8 text-[11px] font-bold text-slate-600 text-center">SqFt</TableHead>
+//                                         <TableHead className="h-8 text-[11px] font-bold text-slate-600 text-center">Qty</TableHead>
+//                                         <TableHead className="h-8 text-[11px] font-bold text-slate-600 text-right">Rate</TableHead>
+//                                         <TableHead className="h-8 text-[11px] font-bold text-slate-600 text-right">Amount</TableHead>
+//                                         <TableHead className="h-8 w-[40px]"></TableHead>
+//                                       </TableRow>
+//                                     </TableHeader>
+//                                     <TableBody>
+//                                       {entry.items.map((item) => (
+//                                         <TableRow key={`item-${item.id}`} className="border-b last:border-0 h-9 hover:bg-slate-50">
+//                                           <TableCell className="py-1 text-xs text-slate-600">{item.date}</TableCell>
+//                                           <TableCell className="py-1 text-xs text-center font-mono text-slate-500">#{item.productId}</TableCell>
+//                                           <TableCell className="py-1 text-xs text-center">{item.width} x {item.height}</TableCell>
+//                                           <TableCell className="py-1 text-xs text-center text-slate-500">{item.sqft}</TableCell>
+//                                           <TableCell className="py-1 text-xs text-center font-medium">{item.quantity}</TableCell>
+//                                           <TableCell className="py-1 text-xs text-right text-slate-500">₹{item.ratePerPiece}</TableCell>
+//                                           <TableCell className="py-1 text-xs text-right font-bold text-slate-800">₹{item.amount}</TableCell>
+//                                           <TableCell className="py-1 text-center">
+//                                             {item.imageUrl && (
+//                                               <Button variant="ghost" size="icon" className="h-6 w-6" title="View Image">
+//                                                 <Eye className="h-3 w-3 text-blue-500" onClick={() => window.open(item.imageUrl, '_blank')} />
+//                                               </Button>
+//                                             )}
+//                                           </TableCell>
+//                                         </TableRow>
+//                                       ))}
+//                                     </TableBody>
+//                                   </Table>
+//                                 </div>
+//                               </div>
+//                             </TableCell>
+//                           </TableRow>
+//                         )}
+//                       </>
+//                     );
+//                   })
+//                 )}
+//               </TableBody>
+//             </Table>
+//           </div>
+
+//           {/* Footer Pagination */}
+//           <div className="flex items-center justify-between px-4 py-3 border-t bg-slate-50">
+//              <div className="text-xs text-muted-foreground">
+//                Showing {entries.length} of {totalElements} entries
+//              </div>
+//              <div className="flex items-center gap-2">
+//                <Button
+//                  variant="outline"
+//                  size="icon"
+//                  className="h-8 w-8 bg-white"
+//                  onClick={() => handlePageChange(currentPage - 1)}
+//                  disabled={currentPage === 0 || loading}
+//                >
+//                  <ChevronLeft className="h-4 w-4" />
+//                </Button>
+//                <span className="text-xs font-medium px-2 min-w-[80px] text-center">
+//                  Page {currentPage + 1} of {totalPages || 1}
+//                </span>
+//                <Button
+//                  variant="outline"
+//                  size="icon"
+//                  className="h-8 w-8 bg-white"
+//                  onClick={() => handlePageChange(currentPage + 1)}
+//                  disabled={currentPage >= totalPages - 1 || loading}
+//                >
+//                  <ChevronRight className="h-4 w-4" />
+//                </Button>
+//              </div>
+//           </div>
+//         </Card>
+//       </div>
+
+//       {/* Export Dialog (UI Only) */}
+//       <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+//         <DialogContent className="sm:max-w-[425px]">
+//           <DialogHeader>
+//             <DialogTitle>Export Ledger</DialogTitle>
+//             <DialogDescription>
+//               Select criteria to generate an export file.
+//             </DialogDescription>
+//           </DialogHeader>
+//           <div className="grid gap-4 py-4">
+//             <div className="grid grid-cols-2 gap-4">
+//               <div className="space-y-2">
+//                 <Label>From Date</Label>
+//                 <Input type="date" value={exportStart} onChange={(e) => setExportStart(e.target.value)} />
+//               </div>
+//               <div className="space-y-2">
+//                 <Label>To Date</Label>
+//                 <Input type="date" value={exportEnd} onChange={(e) => setExportEnd(e.target.value)} />
+//               </div>
+//             </div>
+//             <div className="space-y-2">
+//               <Label>Customer (Optional)</Label>
+//               <CustomerFilterCombobox customers={customers} value={exportCustomer} onChange={setExportCustomer} />
+//             </div>
+//           </div>
+//           <DialogFooter>
+//             <Button variant="outline" onClick={() => setShowExportDialog(false)}>Cancel</Button>
+//             <Button onClick={() => { setShowExportDialog(false); /* Trigger export API later */ }}>Download Excel</Button>
+//           </DialogFooter>
+//         </DialogContent>
+//       </Dialog>
+
+//     </main>
+//   );
+// }
+
+
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { getLedgerEntries, getCustomers, getPriceLists, LedgerEntry, Customer, PriceList } from '@/lib/storage';
-import { ArrowLeft, Search, Plus, Download, Calendar, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { 
+  Plus, 
+  Download, 
+  X, 
+  Check,
+  ChevronsUpDown,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  FileSpreadsheet
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { fetchLedgerEntries, setPage, setFilters, resetFilters } from '@/app/ledgerSheetSlice';
+import { fetchCustomers } from '@/app/customerSlice';
+import { cn } from '@/lib/utils';
 
-export default function LedgerPage() {
-  const navigate = useNavigate();
-  const [entries, setEntries] = useState<LedgerEntry[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [priceLists, setPriceLists] = useState<PriceList[]>([]);
-  const [mounted, setMounted] = useState(false);
-  const [expandedEntry, setExpandedEntry] = useState<string | null>(null);
-
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
-  const [searchCustomer, setSearchCustomer] = useState<string>('');
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
-
-  useEffect(() => {
-    setMounted(true);
-    setEntries(getLedgerEntries());
-    setCustomers(getCustomers());
-    setPriceLists(getPriceLists());
-  }, []);
-
-  const getCustomerName = (id: string) => {
-    return customers.find(c => c.id === id)?.name || 'Unknown';
-  };
-
-  const getProductName = (productId: string) => {
-    for (const list of priceLists) {
-      const product = list.products.find(p => p.id === productId);
-      if (product) return product.name;
-    }
-    return 'Unknown';
-  };
-
-  const filteredEntries = useMemo(() => {
-    return entries.filter(entry => {
-      const customerName = getCustomerName(entry.customerId).toLowerCase();
-      const entryDate = new Date(entry.date);
-      const start = startDate ? new Date(startDate) : null;
-      const end = endDate ? new Date(endDate) : null;
-
-      if (selectedCustomerId && entry.customerId !== selectedCustomerId) {
-        return false;
-      }
-
-      if (searchCustomer && !customerName.includes(searchCustomer.toLowerCase())) {
-        return false;
-      }
-
-      if (start && entryDate < start) return false;
-      if (end) {
-        end.setHours(23, 59, 59, 999);
-        if (entryDate > end) return false;
-      }
-
-      return true;
-    });
-  }, [entries, selectedCustomerId, searchCustomer, startDate, endDate]);
-
-  const customerTotals = useMemo(() => {
-    const totals: Record<string, number> = {};
-    filteredEntries.forEach(entry => {
-      const customerId = entry.customerId;
-      totals[customerId] = (totals[customerId] || 0) + entry.totalAmount;
-    });
-    return totals;
-  }, [filteredEntries]);
-
-  const downloadExcel = () => {
-    if (filteredEntries.length === 0) {
-      alert('No entries to export');
-      return;
-    }
-
-    let csvContent = 'Date,Customer,Total Amount,Items\n';
-    filteredEntries.forEach(entry => {
-      csvContent += `${new Date(entry.date).toLocaleDateString()},${getCustomerName(entry.customerId)},₹${entry.totalAmount.toFixed(2)},${entry.items.length}\n`;
-    });
-
-    const link = document.createElement('a');
-    link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
-    link.download = `ledger-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-  };
-
-  if (!mounted) return null;
-
-  const filteredCustomers = customers.filter(c =>
-    c.name.toLowerCase().includes(searchCustomer.toLowerCase())
-  );
-
-  const showAddCustomerOption = searchCustomer.trim() && filteredCustomers.length === 0;
-  const hasFilters = selectedCustomerId || searchCustomer || startDate || endDate;
+// --- Helper Component: Customer Filter ---
+function CustomerFilterCombobox({ 
+  customers, 
+  value, 
+  onChange 
+}: { 
+  customers: any[], 
+  value: string, 
+  onChange: (id: string) => void 
+}) {
+  const [open, setOpen] = useState(false);
+  const selectedCustomer = customers.find(c => (c.id || c.customerId).toString() === value);
 
   return (
-    <main className="min-h-screen">
-      {/* Header */}
-      <div className=" bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-neutral-900">Ledger</h1>
-              <p className="text-sm text-neutral-600 mt-1">Track all your journal entries and transactions</p>
-            </div>
-            <Button 
-              size="lg"
-              className="gap-2"
-              onClick={() => navigate('/ledger/add')}
-            >
-              <Plus className="w-4 h-4" />
-              Create Journal Entry
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between bg-white border-input"
+        >
+          {selectedCustomer ? selectedCustomer.firstname : "Filter by Customer..."}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[250px] p-0">
+        <Command>
+          <CommandInput placeholder="Search customer..." />
+          <CommandList>
+            <CommandEmpty>No customer found.</CommandEmpty>
+            <CommandGroup>
+              <CommandItem
+                  value="all_customers_reset_value"
+                  onSelect={() => {
+                    onChange("");
+                    setOpen(false);
+                  }}
+                  className="text-muted-foreground italic border-b"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Clear Selection
+              </CommandItem>
+              {customers.map((customer) => {
+                 const id = (customer.id || customer.customerId).toString();
+                 return (
+                  <CommandItem
+                    key={id}
+                    value={customer.firstname}
+                    onSelect={() => {
+                      onChange(id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === id ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {customer.firstname} {customer.lastname}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+export default function LedgerSheetPage() {
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+
+  // Redux
+  const { 
+    entries, 
+    loading, 
+    totalPages, 
+    totalElements, 
+    currentPage,
+    filterCustomerId,
+    filterStartDate,
+    filterEndDate
+  } = useAppSelector((state) => state.ledgerSheet);
+  
+  const { customers } = useAppSelector((state) => state.customer);
+
+  // Local State
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  
+  // Export State
+  const [exportStart, setExportStart] = useState('');
+  const [exportEnd, setExportEnd] = useState('');
+  const [exportCustomer, setExportCustomer] = useState('');
+
+  // Init
+  useEffect(() => {
+    dispatch(fetchCustomers());
+    dispatch(fetchLedgerEntries());
+  }, [dispatch]);
+
+  // --- Filters & Pagination ---
+
+  const handleFilterChange = (key: 'customerId' | 'startDate' | 'endDate', value: string) => {
+    dispatch(setFilters({ [key]: value }));
+    dispatch(fetchLedgerEntries());
+  };
+
+  const handleResetFilters = () => {
+    dispatch(resetFilters());
+    dispatch(fetchLedgerEntries());
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 0 && newPage < totalPages) {
+      dispatch(setPage(newPage));
+      dispatch(fetchLedgerEntries());
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-muted/10 p-4 md:p-8 font-sans">
+      <div className="max-w-[1600px] mx-auto space-y-6">
+        
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Ledger Sheet</h1>
+            <p className="text-muted-foreground text-sm">Track all transactions (Flat View)</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowExportDialog(true)} className="gap-2">
+              <Download className="w-4 h-4" /> Export
+            </Button>
+            <Button onClick={() => navigate('/ledger/add')} className="gap-2">
+              <Plus className="w-4 h-4" /> New Entry
             </Button>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Filter Card */}
-        <Card className="mb-6 border-neutral-200">
-          <CardHeader className="border-b border-neutral-200 pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg">Filters</CardTitle>
-                <CardDescription>Refine your ledger entries</CardDescription>
-              </div>
-              {hasFilters && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedCustomerId('');
-                    setSearchCustomer('');
-                    setStartDate('');
-                    setEndDate('');
-                  }}
-                  className="gap-1 w-28"
-                >
-                  <X className="w-4 h-4" />
-                  Clear
-                </Button>
-              )}
-            </div>
-             <div className="flex flex-row items-end justify-end">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="w-28 gap-2"
-                  onClick={downloadExcel}
-                >
-                  <Download className="w-4 h-4" />
-                  Export
-                </Button>
-              </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Date Range */}
-              <div>
-                <Label className="text-xs font-semibold text-neutral-600 block mb-2">Date Range</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    placeholder="Start date"
-                    className="text-sm"
+        {/* Filters Bar */}
+        <Card className="border-none shadow-sm bg-white">
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row gap-4 items-end">
+              
+              {/* Date Filters */}
+              <div className="flex gap-2 items-end">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">From</Label>
+                  <Input 
+                    type="date" 
+                    className="h-9 w-[140px]" 
+                    value={filterStartDate} 
+                    onChange={(e) => handleFilterChange('startDate', e.target.value)}
                   />
-                  <span className="flex items-center text-neutral-400">-</span>
-                  <Input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    placeholder="End date"
-                    className="text-sm"
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">To</Label>
+                  <Input 
+                    type="date" 
+                    className="h-9 w-[140px]" 
+                    value={filterEndDate} 
+                    onChange={(e) => handleFilterChange('endDate', e.target.value)}
                   />
                 </div>
               </div>
 
-              {/* Customer Filter Dropdown */}
-              <div className='col-span-1'>
-                <Label htmlFor="customer-filter" className="text-xs font-semibold text-neutral-600 block mb-2">Filter by Customer</Label>
-                <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                  <SelectTrigger className="text-sm">
-                    <SelectValue placeholder="All customers" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value=" ">All customers</SelectItem>
-                    {customers.map(customer => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* Customer Filter */}
+              <div className="flex-1 md:max-w-[300px] space-y-1">
+                <Label className="text-xs text-muted-foreground">Customer</Label>
+                <CustomerFilterCombobox 
+                  customers={customers}
+                  value={filterCustomerId}
+                  onChange={(val) => handleFilterChange('customerId', val)}
+                />
               </div>
 
-              {/* Search Customer */}
-              <div>
-                <Label htmlFor="search-customer" className="text-xs font-semibold text-neutral-600 block mb-2">Search Customer</Label>
-                <div className="relative flex gap-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                    <Input
-                      id="search-customer"
-                      placeholder="Search name..."
-                      value={searchCustomer}
-                      onChange={(e) => setSearchCustomer(e.target.value)}
-                      className="pl-10 text-sm"
-                    />
-                  </div>
-                  {showAddCustomerOption && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 whitespace-nowrap text-sm"
-                      onClick={() => navigate('/ledger-masters')}
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add
-                    </Button>
-                  )}
-                </div>
+              {/* Active Filter Indicator & Reset */}
+              <div className="flex-1 flex items-center justify-end">
+                 {(filterCustomerId || filterStartDate || filterEndDate) && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleResetFilters} 
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 h-9"
+                  >
+                    <X className="w-4 h-4 mr-1" /> Clear Filters
+                  </Button>
+                 )}
               </div>
-                  
-             
+
             </div>
           </CardContent>
         </Card>
 
-        {filteredEntries.length === 0 ? (
-          <Card className="border-neutral-200">
-            <CardContent className="pt-12 pb-12">
-              <div className="text-center">
-                <Calendar className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
-                <p className="text-neutral-600 font-medium">No entries found</p>
-                <p className="text-neutral-500 text-sm mt-1">Create a new journal entry to get started</p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-6">
-            {/* Main Entries Table */}
-            <Card className="border-neutral-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-neutral-50 border-b border-neutral-200 hover:bg-neutral-50">
-                      <TableHead className="text-neutral-600 font-semibold text-xs">Date (GMT+0530)</TableHead>
-                      <TableHead className="text-neutral-600 font-semibold text-xs">Customer</TableHead>
-                      <TableHead className="text-neutral-600 font-semibold text-xs">Items</TableHead>
-                      <TableHead className="text-neutral-600 font-semibold text-xs text-right">Debit</TableHead>
-                      <TableHead className="text-neutral-600 font-semibold text-xs text-right">Action</TableHead>
+        {/* Ledger Table - Flat View */}
+        <Card className="border shadow-sm overflow-hidden bg-white">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-100/80 hover:bg-slate-100/80 border-b border-slate-200">
+                  <TableHead className="w-[100px] text-xs font-bold text-slate-700">Date</TableHead>
+                  <TableHead className="w-[180px] text-xs font-bold text-slate-700">Customer</TableHead>
+                  <TableHead className="w-[200px] text-xs font-bold text-slate-700">Product</TableHead>
+                  <TableHead className="w-[120px] text-xs font-bold text-slate-700 text-center">Size (WxH)</TableHead>
+                  <TableHead className="w-[80px] text-xs font-bold text-slate-700 text-center">SqFt</TableHead>
+                  <TableHead className="w-[60px] text-xs font-bold text-slate-700 text-center">Qty</TableHead>
+                  <TableHead className="w-[100px] text-xs font-bold text-slate-700 text-right">Rate/Pc</TableHead>
+                  <TableHead className="w-[100px] text-xs font-bold text-slate-700 text-right">Amount</TableHead>
+                  <TableHead className="w-[100px] text-xs font-bold text-slate-700 text-center">Location</TableHead>
+                  <TableHead className="w-[60px] text-xs font-bold text-slate-700 text-center">Img</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                   <TableRow>
+                     <TableCell colSpan={11} className="h-32 text-center">
+                       <div className="flex justify-center items-center gap-2 text-muted-foreground">
+                         <Loader2 className="h-5 w-5 animate-spin" /> Loading data...
+                       </div>
+                     </TableCell>
+                   </TableRow>
+                ) : entries.length === 0 ? (
+                   <TableRow>
+                     <TableCell colSpan={11} className="h-32 text-center text-muted-foreground">
+                       <FileSpreadsheet className="h-10 w-10 mx-auto mb-2 text-slate-200" />
+                       No ledger entries found.
+                     </TableCell>
+                   </TableRow>
+                ) : (
+                  entries.map((row) => (
+                    <TableRow 
+                      key={`${row.ledgerId}-${row.itemId}`} 
+                      className="hover:bg-slate-50 transition-colors border-b last:border-0"
+                    >
+                      {/* Date */}
+                      <TableCell className="font-medium text-xs text-slate-600">
+                        {row.date}
+                      </TableCell>
+                      
+                      {/* Ledger ID */}
+                      {/* <TableCell className="text-center text-xs font-mono text-slate-400">
+                        #{row.ledgerId}
+                      </TableCell> */}
+                      
+                      {/* Customer */}
+                      <TableCell className="font-semibold text-xs text-foreground truncate max-w-[150px]" title={row.customerName}>
+                        {row.customerName}
+                      </TableCell>
+                      
+                      {/* Product Info */}
+                      <TableCell className="text-xs text-slate-700 font-medium">
+                        {row.productName}
+                        <div className="text-[10px] text-muted-foreground font-normal">SKU #{row.productId}</div>
+                      </TableCell>
+                      
+                      {/* Dimensions */}
+                      <TableCell className="text-center text-xs text-slate-600">
+                        {row.width} x {row.height}
+                      </TableCell>
+                      
+                      {/* SqFt */}
+                      <TableCell className="text-center text-xs text-slate-500">
+                        {row.sqFt}
+                      </TableCell>
+                      
+                      {/* Qty */}
+                      <TableCell className="text-center text-xs font-medium text-slate-700">
+                        {row.quantity}
+                      </TableCell>
+                      
+                      {/* Rate */}
+                      <TableCell className="text-right text-xs text-slate-600">
+                        ₹{row.ratePerPiece}
+                      </TableCell>
+                      
+                      {/* Amount */}
+                      <TableCell className="text-right text-xs font-bold text-slate-800">
+                        ₹{row.amount}
+                      </TableCell>
+                      
+                      {/* Status */}
+                      <TableCell className="text-center">
+                      {row.location}
+                      </TableCell>
+                      
+                      {/* Image */}
+                      <TableCell className="text-center">
+                        {row.imageUrl ? (
+                           <Button 
+                             variant="ghost" 
+                             size="icon" 
+                             className="h-6 w-6 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                             onClick={() => window.open(row.imageUrl, '_blank')}
+                             title="View Image"
+                           >
+                             <Eye className="h-3.5 w-3.5" />
+                           </Button>
+                        ) : (
+                          <span className="text-slate-200">-</span>
+                        )}
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredEntries.map(entry => (
-                      <TableRow key={entry.id} className="border-b border-neutral-200 hover:bg-neutral-50/50">
-                        <TableCell className="text-sm font-medium text-neutral-900">
-                          {new Date(entry.date).toLocaleDateString('en-IN', { 
-                            day: '2-digit', 
-                            month: 'short', 
-                            year: 'numeric' 
-                          })} 04:02:...
-                        </TableCell>
-                        <TableCell className="text-sm font-medium text-neutral-900">
-                          {getCustomerName(entry.customerId)}
-                        </TableCell>
-                        <TableCell className="text-sm text-neutral-600">
-                          {entry.items.length} items
-                        </TableCell>
-                        <TableCell className="text-sm font-semibold text-neutral-900 text-right">
-                          ₹{entry.totalAmount.toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setExpandedEntry(expandedEntry === entry.id ? null : entry.id)}
-                            className="text-neutral-600 hover:text-neutral-900"
-                          >
-                            {expandedEntry === entry.id ? 'Hide' : 'View'}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </Card>
-
-            {/* Expanded Entry Details */}
-            {expandedEntry && (
-              <Card className="border-neutral-200 bg-neutral-50/50">
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-neutral-900">
-                      Entry Details — {new Date(filteredEntries.find(e => e.id === expandedEntry)?.date || '').toLocaleDateString()}
-                    </h3>
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-white border-b border-neutral-200">
-                            <TableHead className="text-neutral-600 font-semibold text-xs">Product</TableHead>
-                            <TableHead className="text-neutral-600 font-semibold text-xs">Description</TableHead>
-                            <TableHead className="text-neutral-600 font-semibold text-xs">Width</TableHead>
-                            <TableHead className="text-neutral-600 font-semibold text-xs">Height</TableHead>
-                            <TableHead className="text-neutral-600 font-semibold text-xs">Sq Ft</TableHead>
-                            <TableHead className="text-neutral-600 font-semibold text-xs">Rate</TableHead>
-                            <TableHead className="text-neutral-600 font-semibold text-xs">1 pc Rate</TableHead>
-                            <TableHead className="text-neutral-600 font-semibold text-xs">Qty</TableHead>
-                            <TableHead className="text-neutral-600 font-semibold text-xs">Extra Charges</TableHead>
-                            <TableHead className="text-neutral-600 font-semibold text-xs text-right">Debit</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredEntries.find(e => e.id === expandedEntry)?.items.map(item => (
-                            <TableRow key={item.id} className="border-b border-neutral-200">
-                              <TableCell className="text-sm font-medium text-neutral-900">{getProductName(item.productId)}</TableCell>
-                              <TableCell className="text-sm text-neutral-600">{item.description || '—'}</TableCell>
-                              <TableCell className="text-sm text-neutral-600">{item.width}</TableCell>
-                              <TableCell className="text-sm text-neutral-600">{item.height}</TableCell>
-                              <TableCell className="text-sm text-neutral-600">{item.sqft.toFixed(2)}</TableCell>
-                              <TableCell className="text-sm text-neutral-600">₹{item.rate.toFixed(2)}</TableCell>
-                              <TableCell className="text-sm text-neutral-600">₹{item.pcRate.toFixed(2)}</TableCell>
-                              <TableCell className="text-sm text-neutral-600">{item.quantity}</TableCell>
-                              <TableCell className="text-sm text-neutral-600">₹{item.extraCharges.toFixed(2)}</TableCell>
-                              <TableCell className="text-sm font-semibold text-right">
-                                <span className="text-emerald-600">₹{item.amount.toFixed(2)}</span>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                    <div className="flex justify-end pt-4 border-t border-neutral-200">
-                      <p className="text-base font-semibold text-neutral-900">
-                        Total: <span className="text-emerald-600">₹{filteredEntries.find(e => e.id === expandedEntry)?.totalAmount.toFixed(2)}</span>
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Summary Card */}
-            <Card className="border-primary bg-blue-50 border-2">
-              <CardHeader className="border-b border-blue-200 pb-4">
-                <CardTitle className="text-neutral-900">Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-3">
-                  {Object.entries(customerTotals).map(([customerId, total]) => (
-                    <div key={customerId} className="flex justify-between items-center pb-3 border-b border-blue-100 last:border-b-0">
-                      <span className="text-neutral-700 font-medium">{getCustomerName(customerId)}</span>
-                      <span className="text-lg font-bold text-primary">₹{total.toFixed(2)}</span>
-                    </div>
-                  ))}
-                  <div className="flex justify-between items-center pt-3 border-t-2 border-blue-200">
-                    <span className="text-neutral-900 font-semibold text-lg">Grand Total</span>
-                    <span className="text-2xl font-bold text-primary">
-                      ₹{Object.values(customerTotals).reduce((sum, total) => sum + total, 0).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
-        )}
+
+          {/* Footer Pagination */}
+          <div className="flex items-center justify-between px-4 py-3 border-t bg-slate-50">
+             <div className="text-xs text-muted-foreground">
+               Showing {entries.length} items (Total: {totalElements})
+             </div>
+             <div className="flex items-center gap-2">
+               <Button 
+                 variant="outline" 
+                 size="icon" 
+                 className="h-8 w-8 bg-white"
+                 onClick={() => handlePageChange(currentPage - 1)}
+                 disabled={currentPage === 0 || loading}
+               >
+                 <ChevronLeft className="h-4 w-4" />
+               </Button>
+               <span className="text-xs font-medium px-2 min-w-[80px] text-center">
+                 Page {currentPage + 1} of {totalPages || 1}
+               </span>
+               <Button 
+                 variant="outline" 
+                 size="icon" 
+                 className="h-8 w-8 bg-white" 
+                 onClick={() => handlePageChange(currentPage + 1)}
+                 disabled={currentPage >= totalPages - 1 || loading}
+               >
+                 <ChevronRight className="h-4 w-4" />
+               </Button>
+             </div>
+          </div>
+        </Card>
       </div>
-    </main>
+
+      {/* Export Dialog (UI Only) */}
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Export Ledger</DialogTitle>
+            <DialogDescription>
+              Select criteria to generate an export file.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>From Date</Label>
+                <Input type="date" value={exportStart} onChange={(e) => setExportStart(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>To Date</Label>
+                <Input type="date" value={exportEnd} onChange={(e) => setExportEnd(e.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Customer (Optional)</Label>
+              <CustomerFilterCombobox customers={customers} value={exportCustomer} onChange={setExportCustomer} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowExportDialog(false)}>Cancel</Button>
+            <Button onClick={() => setShowExportDialog(false)}>Download Excel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+    </main> 
   );
 }

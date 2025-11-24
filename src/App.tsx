@@ -15,10 +15,11 @@ import Enquires from "./Features/Products/Components/Enquires/Enquires";
 import LedgerDashboard from "./pages/LedgerDashboard";
 import LedgerMaster from "./pages/ledger-masters";
 import LedgerPage from "./pages/LedgerSheet";
-import EntriesPage from "./pages/LedgerEntry";
+import EntriesPage from "./extra/LedgerEntry";
 import SidebarManager from "./pages/sidebar-manager";
 import CompanyManager from "./pages/CompanyManager";
 import CreateEntryPage from "./pages/EntryPage";
+import PaymentPage from "./Features/LedgerPayment/PaymentForm";
 
 axios.interceptors.request.use(
   function (config) {
@@ -123,6 +124,11 @@ function App() {
           path: "/ledger/add",
           // element: <EntriesPage />,
           element: <CreateEntryPage />,
+        },
+        {
+          path: "/ledger/payments",
+          // element: <EntriesPage />,
+          element: <PaymentPage />,
         },
       ],
     },

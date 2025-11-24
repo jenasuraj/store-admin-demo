@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { PriceList, getPriceLists, getCustomers, Customer, PriceListProduct, initializeDemoData } from '@/lib/storage';
 import { ArrowLeft, ShoppingCart, LayoutGrid, LayoutList } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { EntryModal } from '@/components/ledger/EntryModal';
+import { EntryModal } from '@/extra/EntryModal';
 
 type ViewMode = 'small-cards' | 'large-cards' | 'list';
 

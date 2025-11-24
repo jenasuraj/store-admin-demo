@@ -25,6 +25,7 @@ import { branchCompaniesSlice } from "@/app/branchCompanySlice";
 import customerSlice from "./customerSlice";
 import priceListSlice from "./priceListSlice";
 import ledgerProductsSlice from "./ledgerProductsSlice";
+import ledgerSheetSlice from './ledgerSheetSlice';
 
 const reducers = {
   user: userSlice,
@@ -48,6 +49,7 @@ const reducers = {
   customer: customerSlice,
   priceList: priceListSlice,
   ledgerProducts: ledgerProductsSlice,
+  ledgerSheet: ledgerSheetSlice
 };
 
 const rootReducer = combineReducers(reducers);

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PriceListForm } from '@/components/ledger/PriceList';
 import PriceListManager from '@/components/ledger/PriceList';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -35,17 +34,8 @@ export default function LedgerMaster() {
   return (
     <main className="min-h-screen bg-background p-8">
       <div className="">
-        <Button 
-          variant="ghost" 
-          className="mb-6 gap-2"
-          onClick={() => navigate('/ledger-dashboard')}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
-        </Button>
-
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Manage Configuration</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Manage Configuration</h1>
           <p className="text-muted-foreground">Create and manage your price lists and customers</p>
         </div>
 

@@ -368,7 +368,9 @@ function CreateCustomerForm({
                   maxFiles={1}
                   disabled={isUploading}
                 >
-                  <DropzoneEmptyState />
+                  <>
+                    <DropzoneEmptyState />
+                  </>
                   <DropzoneContent />
                 </Dropzone>
                 {isUploading && (
