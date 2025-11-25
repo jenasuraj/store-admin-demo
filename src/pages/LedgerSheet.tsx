@@ -252,6 +252,7 @@ export default function LedgerSheetPage() {
                   <TableHead className="w-[60px] text-xs font-bold text-slate-700 text-center">Qty</TableHead>
                   <TableHead className="w-[100px] text-xs font-bold text-slate-700 text-right">Rate/Pc</TableHead>
                   <TableHead className="w-[100px] text-xs font-bold text-slate-700 text-right">Total Sqft</TableHead>
+                  <TableHead className="w-[100px] text-xs font-bold text-slate-700 text-right">Extra Charge</TableHead>
                   <TableHead className="w-[100px] text-xs font-bold text-slate-700 text-right">Amount</TableHead>
                   <TableHead className="w-[60px] text-xs font-bold text-slate-700 text-center">Img</TableHead>
                 </TableRow>
@@ -325,6 +326,11 @@ export default function LedgerSheetPage() {
                       {/* Total Sqft */}
                       <TableCell className="text-right text-xs text-slate-600">
                         {row.totalSqft || row.sqFt * row.quantity}
+                      </TableCell>
+                      
+                      {/* Extra charge */}
+                      <TableCell className="text-right text-xs font-bold text-slate-800">
+                        ₹{row.extraCharge}
                       </TableCell>
                       
                       {/* Amount */}
