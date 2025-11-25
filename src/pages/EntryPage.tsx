@@ -38,22 +38,19 @@ import {
   ChevronsUpDownIcon,
   XIcon,
   Upload,
-  ArrowLeft,
   Loader2,
   Eye,
   Trash2,
   Copy,
   Save,
   AlertTriangle,
-  ShoppingBasket,
   Info,
 } from "lucide-react";
-import { useNavigate, useBlocker } from "react-router-dom"; // Added useBlocker
+import { useNavigate, useBlocker } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { fetchCustomers } from "@/app/customerSlice";
 import {
   fetchLedgerProducts,
-  resetProductList,
   ledgerProductsDataType,
 } from "@/app/ledgerProductsSlice";
 import { toast } from "sonner";
@@ -81,13 +78,14 @@ interface CustomerPriceList {
 interface LedgerRowItem {
   internalId: string;
   date: string;
-  productId: number;
+  productId: number; // 0 if not selected
   productName: string;
   defaultSku: string;
 
   width: number;
   height: number;
   sqft: number;
+  totalSqft: number;
 
   basePrice: number;
   ratePerPiece: number;
@@ -101,7 +99,6 @@ interface LedgerRowItem {
   isUploading?: boolean;
 }
 
-// Interface for Draft Data in LocalStorage
 interface DraftData {
   selectedCustomerId: string;
   rows: LedgerRowItem[];
@@ -124,17 +121,16 @@ const uploadImageAPI = async (file: File): Promise<string> => {
 };
 
 const deleteImageAPI = async (imageUrl: string) => {
-  // Sending URL or ID to delete
   await axios.delete(`${BASE_URL}/api/user/delete-blob?url=${imageUrl}`);
 };
 
 // --- Components ---
 
-// 1. Multi-Select Combobox
-function MultiSelectCombobox({
+// Refactored: Single Select Combobox for Table Rows
+function RowProductCombobox({
   items,
-  selectedProductIds,
-  onToggle,
+  selectedProductId,
+  onSelect,
   priceListMap,
   searchTerm,
   setSearchTerm,
@@ -143,8 +139,8 @@ function MultiSelectCombobox({
   onLoadMore,
 }: {
   items: ledgerProductsDataType[];
-  selectedProductIds: number[];
-  onToggle: (product: ledgerProductsDataType) => void;
+  selectedProductId: number;
+  onSelect: (product: ledgerProductsDataType) => void;
   priceListMap: Record<number, number>;
   searchTerm: string;
   setSearchTerm: (v: string) => void;
@@ -154,29 +150,27 @@ function MultiSelectCombobox({
 }) {
   const [open, setOpen] = useState(false);
 
+  // Find selected item name for display
+  const selectedItemName =
+    items.find((i) => i.productId === selectedProductId)?.name ||
+    (selectedProductId !== 0 ? "Product Selected" : "Select Product...");
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
-          className="w-full justify-between text-left font-normal h-auto min-h-[30px]"
+          className={cn(
+            "w-full justify-between text-left font-normal h-8 text-xs px-2",
+            !selectedProductId && "text-muted-foreground"
+          )}
         >
-          <div className="flex flex-wrap gap-1">
-            {selectedProductIds.length > 0 ? (
-              <span className="py-0">
-                {selectedProductIds.length} products selected
-              </span>
-            ) : (
-              <span className="text-muted-foreground py-0">
-                Search & Select Products...
-              </span>
-            )}
-          </div>
-          <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <span className="truncate">{selectedItemName}</span>
+          <ChevronsUpDownIcon className="ml-2 h-3 w-3 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[500px] p-0" align="start">
+      <PopoverContent className="w-[400px] p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput
             placeholder="Search products..."
@@ -195,7 +189,7 @@ function MultiSelectCombobox({
 
             <CommandGroup>
               {items.map((item) => {
-                const isSelected = selectedProductIds.includes(item.productId);
+                const isSelected = selectedProductId === item.productId;
                 const isSpecial = priceListMap.hasOwnProperty(item.productId);
                 const price = isSpecial
                   ? priceListMap[item.productId]
@@ -205,19 +199,18 @@ function MultiSelectCombobox({
                   <CommandItem
                     key={item.productId}
                     value={item.name}
-                    onSelect={() => onToggle(item)}
+                    onSelect={() => {
+                      onSelect(item);
+                      setOpen(false);
+                    }}
                   >
                     <div className="flex items-center w-full">
-                      <div
+                      <CheckIcon
                         className={cn(
-                          "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                          isSelected
-                            ? "bg-primary text-primary-foreground"
-                            : "opacity-50 [&_svg]:invisible"
+                          "mr-2 h-4 w-4",
+                          isSelected ? "opacity-100" : "opacity-0"
                         )}
-                      >
-                        <CheckIcon className="h-4 w-4" />
-                      </div>
+                      />
                       <div className="flex flex-col flex-1">
                         <span className="flex items-center gap-2 font-medium">
                           {item.name}
@@ -255,7 +248,7 @@ function MultiSelectCombobox({
   );
 }
 
-// 2. Customer Combobox
+// Customer Combobox
 function CustomerCombobox({
   customers,
   selectedCustomerId,
@@ -339,6 +332,7 @@ export default function CreateEntryPage() {
   const [rows, setRows] = useState<LedgerRowItem[]>([]);
   const [priceList, setPriceList] = useState<CustomerPriceList | null>(null);
   const [isLoadingPriceList, setIsLoadingPriceList] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // New Loading State
   const [searchTerm, setSearchTerm] = useState("");
   const observer = useRef<IntersectionObserver | null>(null);
 
@@ -353,17 +347,33 @@ export default function CreateEntryPage() {
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [draftToRestore, setDraftToRestore] = useState<DraftData | null>(null);
 
+  // Helper to create an empty row
+  const createEmptyRow = (): LedgerRowItem => ({
+    internalId: Math.random().toString(36).substr(2, 9),
+    date: format(new Date(), "yyyy-MM-dd"),
+    productId: 0,
+    productName: "",
+    defaultSku: "",
+    width: 0,
+    height: 0,
+    sqft: 0,
+    totalSqft: 0,
+    basePrice: 0,
+    ratePerPiece: 0,
+    quantity: 1,
+    extraCharge: 0,
+    amount: 0,
+    location: "",
+    imageUrl: "",
+  });
+
   // --- 1. Check for Draft on Mount ---
   useEffect(() => {
     const savedDraft = localStorage.getItem("ledger_draft");
     if (savedDraft) {
       try {
         const parsed = JSON.parse(savedDraft) as DraftData;
-        // Validate basic structure
-        if (
-          parsed.selectedCustomerId ||
-          (parsed.rows && parsed.rows.length > 0)
-        ) {
+        if (parsed.selectedCustomerId || parsed.rows.length > 0) {
           setDraftToRestore(parsed);
           setShowRestoreDialog(true);
         }
@@ -371,26 +381,30 @@ export default function CreateEntryPage() {
         console.error("Failed to parse draft", e);
         localStorage.removeItem("ledger_draft");
       }
+    } else {
+      // If no draft, ensure at least one empty row exists
+      setRows([createEmptyRow()]);
     }
     dispatch(fetchCustomers());
   }, [dispatch]);
 
-  // --- 2. Browser Refresh Protection (beforeunload) ---
+  // --- 2. Browser Refresh Protection ---
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (selectedCustomerId || rows.length > 0) {
+      // Only warn if we have a customer or rows with data
+      const hasData = rows.some((r) => r.productId !== 0);
+      if (selectedCustomerId || hasData) {
         e.preventDefault();
-        e.returnValue = ""; // Standard browser behavior triggers a generic warning
+        e.returnValue = "";
       }
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [selectedCustomerId, rows]);
 
-  // --- 3. Internal Navigation Blocking (useBlocker) ---
-  // Detects if user tries to navigate via React Router while form is dirty
-  const isDirty = selectedCustomerId !== "" || rows.length > 0;
-
+  // --- 3. Internal Navigation Blocking ---
+  const isDirty =
+    selectedCustomerId !== "" || rows.some((r) => r.productId !== 0);
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       isDirty && currentLocation.pathname !== nextLocation.pathname
@@ -412,47 +426,28 @@ export default function CreateEntryPage() {
     };
     localStorage.setItem("ledger_draft", JSON.stringify(draftData));
     toast.success("Progress saved as draft");
-
-    // If triggered by navigation blocker
-    if (blocker.state === "blocked") {
-      blocker.proceed();
-    }
+    if (blocker.state === "blocked") blocker.proceed();
     setShowSaveDraftDialog(false);
   };
 
   const handleDiscardAndExit = async () => {
-    // 1. Delete images from server (Cleanup)
     const deletePromises = rows
-      .filter((r) => r.imageUrl && r.imageUrl.startsWith("http")) // Simple check for valid URL
+      .filter((r) => r.imageUrl && r.imageUrl.startsWith("http"))
       .map((r) => deleteImageAPI(r.imageUrl));
 
     if (deletePromises.length > 0) {
       toast.info(`Cleaning up ${deletePromises.length} uploaded images...`);
-      try {
-        await Promise.all(deletePromises);
-      } catch (error) {
-        console.error("Failed to clean up images", error);
-      }
+      await Promise.all(deletePromises).catch((e) => console.error(e));
     }
 
-    // 2. Clear local storage if any
-    // localStorage.removeItem('ledger_draft'); // Requirement implies "reset the form", optional if we want to kill old drafts too
-
-    // 3. Reset Form (State)
     setSelectedCustomerId("");
-    setRows([]);
-
-    // 4. Proceed with navigation
-    if (blocker.state === "blocked") {
-      blocker.proceed();
-    }
+    setRows([createEmptyRow()]);
+    if (blocker.state === "blocked") blocker.proceed();
     setShowSaveDraftDialog(false);
   };
 
   const handleCancelNavigation = () => {
-    if (blocker.state === "blocked") {
-      blocker.reset();
-    }
+    if (blocker.state === "blocked") blocker.reset();
     setShowSaveDraftDialog(false);
   };
 
@@ -468,6 +463,7 @@ export default function CreateEntryPage() {
   const handleDiscardDraftOnStart = () => {
     localStorage.removeItem("ledger_draft");
     setDraftToRestore(null);
+    setRows([createEmptyRow()]); // Ensure one row on fresh start
     setShowRestoreDialog(false);
     toast.info("Draft discarded");
   };
@@ -539,44 +535,51 @@ export default function CreateEntryPage() {
 
   // --- Row Logic ---
 
-  const handleProductToggle = (product: ledgerProductsDataType) => {
-    const existingRows = rows.filter((r) => r.productId === product.productId);
-
-    if (existingRows.length > 0) {
-      // Deselect: Remove all rows for this product
-      // (If user wants to keep one but remove others, they should use the X button on the row)
-      setRows((prev) => prev.filter((r) => r.productId !== product.productId));
-    } else {
-      // Select: Add new row
-      addRow(product);
-    }
-  };
-
-  const addRow = (product: ledgerProductsDataType) => {
+  // When a product is selected in a specific row
+  const handleRowProductSelect = (
+    internalId: string,
+    product: ledgerProductsDataType
+  ) => {
     const basePrice =
       priceListMap[product.productId] ?? product.attributes?.[0]?.price ?? 0;
+
+    // Default dimensions
     const width = 1,
       height = 1,
       sqft = 1;
 
-    const newRow: LedgerRowItem = {
-      internalId: Math.random().toString(36).substr(2, 9),
-      date: format(new Date(), "yyyy-MM-dd"),
-      productId: product.productId,
-      productName: product.name,
-      defaultSku: product.defaultSku,
-      width,
-      height,
-      sqft,
-      basePrice,
-      ratePerPiece: basePrice * sqft,
-      quantity: 1,
-      extraCharge: 0,
-      amount: basePrice * sqft,
-      location: "",
-      imageUrl: "",
-    };
-    setRows((prev) => [...prev, newRow]);
+    setRows((prev) => {
+      const updatedRows = prev.map((row) => {
+        if (row.internalId !== internalId) return row;
+
+        // Populate the row with product details
+        const newRow = {
+          ...row,
+          productId: product.productId,
+          productName: product.name,
+          defaultSku: product.defaultSku,
+          width,
+          height,
+          sqft,
+          basePrice,
+          ratePerPiece: basePrice * sqft,
+          amount: basePrice * sqft * row.quantity + row.extraCharge,
+        };
+        // Ensure totalSqft is calculated
+        newRow.totalSqft = sqft * row.quantity;
+        return newRow;
+      });
+
+      // Check if we need to add a new empty row (Auto-add)
+      const currentIndex = updatedRows.findIndex(
+        (r) => r.internalId === internalId
+      );
+      if (currentIndex === updatedRows.length - 1) {
+        updatedRows.push(createEmptyRow());
+      }
+
+      return updatedRows;
+    });
   };
 
   const duplicateRow = (row: LedgerRowItem) => {
@@ -584,7 +587,21 @@ export default function CreateEntryPage() {
       ...row,
       internalId: Math.random().toString(36).substr(2, 9),
     };
-    setRows((prev) => [...prev, newRow]);
+    setRows((prev) => {
+      // Insert duplicate after current row or at end? Typically at end.
+      // But logic requires empty row at end.
+      const list = [...prev];
+      // If last row is empty, insert before it
+      const lastRow = list[list.length - 1];
+      if (lastRow.productId === 0) {
+        list.splice(list.length - 1, 0, newRow);
+      } else {
+        list.push(newRow);
+        // Ensure empty row exists after
+        list.push(createEmptyRow());
+      }
+      return list;
+    });
   };
 
   const updateRow = (
@@ -626,19 +643,31 @@ export default function CreateEntryPage() {
             ).toFixed(2)
           );
         }
+        // Always recalculate totalSqft unless the field being updated is totalSqft itself (to allow manual override)
+        if (field !== "totalSqft") {
+          updated.totalSqft = parseFloat(
+            (updated.sqft * updated.quantity).toFixed(2)
+          );
+        }
         return updated;
       })
     );
   };
 
   const removeRow = (internalId: string) => {
-    setRows((prev) => prev.filter((r) => r.internalId !== internalId));
+    setRows((prev) => {
+      const filtered = prev.filter((r) => r.internalId !== internalId);
+      // Ensure there is always at least one empty row if all deleted
+      if (filtered.length === 0) {
+        return [createEmptyRow()];
+      }
+      return filtered;
+    });
   };
 
   // --- Image API Handling ---
 
   const handleImageUpload = async (internalId: string, file: File) => {
-    // Set loading state for this row (optional UI enhancement)
     updateRow(internalId, "isUploading", true);
     try {
       const uploadedUrl = await uploadImageAPI(file);
@@ -667,18 +696,26 @@ export default function CreateEntryPage() {
   // --- Submit ---
   const handleSubmit = async () => {
     if (!selectedCustomerId) return toast.error("Select a customer");
-    if (rows.length === 0) return toast.error("Add items to ledger");
+
+    // Filter out rows that have no product selected
+    const validRows = rows.filter((r) => r.productId !== 0);
+
+    if (validRows.length === 0)
+      return toast.error("Add at least one product to ledger");
+
+    setIsSubmitting(true);
 
     const payload = {
       customerId: parseInt(selectedCustomerId),
       paymentStatus: "PENDING",
-      totalAmount: rows.reduce((sum, r) => sum + r.amount, 0),
-      items: rows.map((r) => ({
+      totalAmount: validRows.reduce((sum, r) => sum + r.amount, 0),
+      items: validRows.map((r) => ({
         date: r.date,
         productId: r.productId,
         height: r.height,
         width: r.width,
         sqft: r.sqft,
+        totalSqft: `${r.totalSqft}`,
         basePrice: r.basePrice,
         ratePerPiece: r.ratePerPiece,
         quantity: r.quantity,
@@ -693,19 +730,20 @@ export default function CreateEntryPage() {
       const res = await axios.post(`${BASE_URL}/api/ledger/create`, payload);
       if (res.status === 200 || res.status === 201) {
         toast.success("Ledger entry created!");
-        // Clear draft if successful
         localStorage.removeItem("ledger_draft");
-        // Manually reset form before navigation to avoid blocker
         setSelectedCustomerId("");
-        setRows([]);
-        setTimeout(() => navigate("/ledger-sheet"), 1000);
+        setRows([createEmptyRow()]); // Reset to initial state
+        // setTimeout(() => navigate("/ledger-sheet"), 1000);
       }
     } catch (e) {
       toast.error("Failed to create entry");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const grandTotal = rows.reduce((sum, r) => sum + r.amount, 0);
+  const grandTotalSqft = rows.reduce((sum, r) => sum + r.totalSqft, 0);
 
   return (
     <main className="min-h-screen bg-background p-4 md:p-8">
@@ -720,8 +758,8 @@ export default function CreateEntryPage() {
         </div>
 
         <Card>
-          <CardContent className="p-6 grid gap-6 md:grid-cols-2 items-end">
-            <div className="flex flex-col gap-2">
+          <CardContent className="p-6 grid gap-6 items-end">
+            <div className="flex flex-col gap-2 max-w-md">
               <Label>Customer</Label>
               <CustomerCombobox
                 customers={customers}
@@ -729,21 +767,7 @@ export default function CreateEntryPage() {
                 onSelect={setSelectedCustomerId}
               />
             </div>
-
-            <div className="flex flex-col gap-2">
-              <Label>Add Products</Label>
-              <MultiSelectCombobox
-                items={products}
-                selectedProductIds={rows.map((r) => r.productId)}
-                onToggle={handleProductToggle}
-                priceListMap={priceListMap}
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                loading={fetchingProducts}
-                hasMore={hasMore}
-                onLoadMore={lastElementRef}
-              />
-            </div>
+            {/* Removed the MultiSelectCombobox from here */}
           </CardContent>
         </Card>
 
@@ -759,234 +783,283 @@ export default function CreateEntryPage() {
           )
         )}
 
-        {rows.length > 0 ? (
-          <Card>
-            <CardContent className="p-0 overflow-hidden">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead className="w-[130px]">Date</TableHead>
-                      <TableHead className="min-w-[120px]">Product</TableHead>
-                      <TableHead className="min-w-[100px]">Width</TableHead>
-                      <TableHead className="min-w-[100px]">Height</TableHead>
-                      <TableHead className="min-w-[100px]">SqFt</TableHead>
-                      <TableHead className="min-w-[100px]">Rate</TableHead>
-                      <TableHead className="min-w-[100px]">1pc Rate</TableHead>
-                      <TableHead className="min-w-[100px]">Qty</TableHead>
-                      <TableHead className="min-w-[130px]">
-                        Extra Charges
-                      </TableHead>
-                      <TableHead className="min-w-[120px]">Location</TableHead>
-                      <TableHead className="min-w-[60px]">Image</TableHead>
-                      <TableHead className="min-w-[100px] text-right">
-                        Amount
-                      </TableHead>
-                      <TableHead className="min-w-[80px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rows.map((row) => (
-                      <TableRow key={row.internalId}>
-                        <TableCell>
-                          <Input
-                            type="date"
-                            className="h-8 w-full px-2 text-xs"
-                            value={row.date}
-                            onChange={(e) =>
-                              updateRow(row.internalId, "date", e.target.value)
-                            }
-                          />
-                        </TableCell>
+        <Card>
+          <CardContent className="p-0 overflow-hidden">
+            <div className="overflow-x-auto min-h-[300px]">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="w-[130px]">Date</TableHead>
+                    <TableHead className="min-w-[250px]">Product</TableHead>
+                    <TableHead className="min-w-[100px]">Location</TableHead>
+                    <TableHead className="min-w-[80px]">Width</TableHead>
+                    <TableHead className="min-w-[80px]">Height</TableHead>
+                    <TableHead className="min-w-[80px]">SqFt</TableHead>
+                    <TableHead className="min-w-[80px]">Rate</TableHead>
+                    <TableHead className="min-w-[80px]">1pc Rate</TableHead>
+                    <TableHead className="min-w-[80px]">Qty</TableHead>
+                    <TableHead className="min-w-[80px]">Total Sqft</TableHead>
+                    <TableHead className="min-w-[100px]">Extra</TableHead>
+                    <TableHead className="min-w-[60px]">Image</TableHead>
+                    <TableHead className="min-w-[100px] text-right">
+                      Amount
+                    </TableHead>
+                    <TableHead className="min-w-[80px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((row) => (
+                    <TableRow
+                      key={row.internalId}
+                      className={cn(row.productId === 0 && "bg-muted/5")}
+                    >
+                      <TableCell>
+                        <Input
+                          type="date"
+                          className="h-8 w-full px-2 text-xs"
+                          value={row.date}
+                          onChange={(e) =>
+                            updateRow(row.internalId, "date", e.target.value)
+                          }
+                        />
+                      </TableCell>
 
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span
-                              className="font-medium text-sm truncate max-w-[150px]"
-                              title={row.productName}
-                            >
-                              {row.productName}
-                            </span>
-                            {priceListMap[row.productId] !== undefined && (
-                              <span className="text-[10px] text-green-600">
-                                Special Price
-                              </span>
-                            )}
-                          </div>
-                        </TableCell>
+                      <TableCell>
+                        {/* New Row-Based Product Combobox */}
+                        <div
+                          className={cn(
+                            !selectedCustomerId &&
+                              "pointer-events-none touch-none",
+                            "flex flex-col gap-1"
+                          )}
+                        >
+                          <RowProductCombobox
+                            items={products}
+                            selectedProductId={row.productId}
+                            onSelect={(p) =>
+                              handleRowProductSelect(row.internalId, p)
+                            }
+                            priceListMap={priceListMap}
+                            searchTerm={searchTerm}
+                            setSearchTerm={setSearchTerm}
+                            loading={fetchingProducts}
+                            hasMore={hasMore}
+                            onLoadMore={lastElementRef}
+                          />
+                          {/* {row.productName && row.productId !== 0 && (
+                             <div className="text-[10px] text-muted-foreground px-2">
+                                SKU: {row.defaultSku} 
+                                {priceListMap[row.productId] !== undefined && (
+                                  <span className="text-green-600 ml-2 font-medium">Special Price</span>
+                                )}
+                             </div>
+                          )} */}
+                        </div>
+                      </TableCell>
 
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min={0}
-                            className="h-8 px-1"
-                            value={row.width}
-                            onChange={(e) =>
-                              updateRow(
-                                row.internalId,
-                                "width",
-                                parseFloat(e.target.value)
-                              )
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min={0}
-                            className="h-8 px-1"
-                            value={row.height}
-                            onChange={(e) =>
-                              updateRow(
-                                row.internalId,
-                                "height",
-                                parseFloat(e.target.value)
-                              )
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min={0}
-                            className="h-8 px-1 bg-muted/30"
-                            value={row.sqft}
-                            onChange={(e) =>
-                              updateRow(
-                                row.internalId,
-                                "sqft",
-                                parseFloat(e.target.value)
-                              )
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min={0}
-                            className="h-8 px-1"
-                            value={row.basePrice}
-                            onChange={(e) =>
-                              updateRow(
-                                row.internalId,
-                                "basePrice",
-                                parseFloat(e.target.value)
-                              )
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min={0}
-                            className="h-8 px-1 font-medium text-blue-600"
-                            value={row.ratePerPiece}
-                            onChange={(e) =>
-                              updateRow(
-                                row.internalId,
-                                "ratePerPiece",
-                                parseFloat(e.target.value)
-                              )
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            className="h-8 px-1"
-                            min={1}
-                            value={row.quantity}
-                            onChange={(e) =>
-                              updateRow(
-                                row.internalId,
-                                "quantity",
-                                parseFloat(e.target.value)
-                              )
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min={0}
-                            className="h-8 px-1"
-                            value={row.extraCharge}
-                            onChange={(e) =>
-                              updateRow(
-                                row.internalId,
-                                "extraCharge",
-                                parseFloat(e.target.value)
-                              )
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            className="h-8 px-1"
-                            value={row.location}
-                            onChange={(e) =>
-                              updateRow(
-                                row.internalId,
-                                "location",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </TableCell>
+                      <TableCell>
+                        <Input
+                          className="h-8 px-1"
+                          value={row.location}
+                          disabled={row.productId === 0}
+                          onChange={(e) =>
+                            updateRow(
+                              row.internalId,
+                              "location",
+                              e.target.value
+                            )
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={0}
+                          className="h-8 px-1"
+                          value={row.width}
+                          disabled={row.productId === 0}
+                          onChange={(e) =>
+                            updateRow(
+                              row.internalId,
+                              "width",
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={0}
+                          className="h-8 px-1"
+                          value={row.height}
+                          disabled={row.productId === 0}
+                          onChange={(e) =>
+                            updateRow(
+                              row.internalId,
+                              "height",
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={0}
+                          className="h-8 px-1 bg-muted/30"
+                          value={row.sqft}
+                          // disabled={row.productId === 0}
+                          disabled={true}
+                          onChange={(e) =>
+                            updateRow(
+                              row.internalId,
+                              "sqft",
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={0}
+                          className="h-8 px-1"
+                          value={row.basePrice}
+                          disabled={row.productId === 0}
+                          onChange={(e) =>
+                            updateRow(
+                              row.internalId,
+                              "basePrice",
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={0}
+                          className="h-8 px-1 font-medium text-blue-600"
+                          value={row.ratePerPiece}
+                          disabled={row.productId === 0}
+                          onChange={(e) =>
+                            updateRow(
+                              row.internalId,
+                              "ratePerPiece",
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          className="h-8 px-1"
+                          min={0}
+                          value={row.quantity}
+                          disabled={row.productId === 0}
+                          onChange={(e) =>
+                            updateRow(
+                              row.internalId,
+                              "quantity",
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          className="h-8 px-1 bg-muted/30"
+                          min={0}
+                          value={row.totalSqft}
+                          // disabled={row.productId === 0}
+                          disabled={true}
+                          onChange={(e) =>
+                            updateRow(
+                              row.internalId,
+                              "totalSqft",
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={0}
+                          className="h-8 px-1"
+                          value={row.extraCharge}
+                          disabled={row.productId === 0}
+                          onChange={(e) =>
+                            updateRow(
+                              row.internalId,
+                              "extraCharge",
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                        />
+                      </TableCell>
 
-                        {/* Image Upload */}
-                        <TableCell>
-                          <div className="flex justify-center items-center">
-                            {row.isUploading ? (
-                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                            ) : row.imageUrl ? (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-blue-600"
-                                onClick={() =>
-                                  setPreviewImage({
-                                    url: row.imageUrl,
-                                    internalId: row.internalId,
-                                  })
-                                }
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            ) : (
-                              <>
-                                <Label
-                                  htmlFor={`file-${row.internalId}`}
-                                  className="cursor-pointer hover:bg-muted p-1 rounded-md"
-                                >
-                                  <Upload className="h-4 w-4 text-muted-foreground" />
-                                </Label>
-                                <Input
-                                  id={`file-${row.internalId}`}
-                                  type="file"
-                                  className="hidden"
-                                  accept="image/*"
-                                  onChange={(e) =>
-                                    e.target.files?.[0] &&
-                                    handleImageUpload(
-                                      row.internalId,
-                                      e.target.files[0]
-                                    )
+                      {/* Image Upload */}
+                      <TableCell>
+                        <div className="flex justify-center items-center">
+                          {row.productId !== 0 && (
+                            <>
+                              {row.isUploading ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                              ) : row.imageUrl ? (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-blue-600"
+                                  onClick={() =>
+                                    setPreviewImage({
+                                      url: row.imageUrl,
+                                      internalId: row.internalId,
+                                    })
                                   }
-                                />
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              ) : (
+                                <>
+                                  <Label
+                                    htmlFor={`file-${row.internalId}`}
+                                    className="cursor-pointer hover:bg-muted p-1 rounded-md"
+                                  >
+                                    <Upload className="h-4 w-4 text-muted-foreground" />
+                                  </Label>
+                                  <Input
+                                    id={`file-${row.internalId}`}
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={(e) =>
+                                      e.target.files?.[0] &&
+                                      handleImageUpload(
+                                        row.internalId,
+                                        e.target.files[0]
+                                      )
+                                    }
+                                  />
+                                </>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
 
-                        <TableCell>
-                          <div className="text-right font-bold text-sm">
-                            {row.amount.toFixed(0)}
-                          </div>
-                        </TableCell>
+                      <TableCell>
+                        <div className="text-right font-bold text-sm">
+                          {row.amount.toFixed(0)}
+                        </div>
+                      </TableCell>
 
-                        <TableCell>
-                          <div className="flex gap-1">
+                      <TableCell>
+                        <div className="flex gap-1">
+                          {row.productId !== 0 && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -996,53 +1069,60 @@ export default function CreateEntryPage() {
                             >
                               <Copy className="h-3 w-3" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-red-500 hover:bg-red-50"
-                              onClick={() => removeRow(row.internalId)}
-                            >
-                              <XIcon className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              <div className="p-4 bg-muted/20 border-t flex justify-end items-center gap-4">
-                <div className="text-xl font-bold">
-                  Grand Total:{" "}
-                  <span className="text-primary">
-                    {grandTotal.toLocaleString("en-IN")}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="border-2 border-dashed border-muted-foreground/25 rounded-xl p-12 flex flex-col items-center justify-center text-center min-h-[400px] bg-muted/5 animate-in fade-in-50">
-            <div className="bg-background p-4 rounded-full mb-4 shadow-sm ring-1 ring-border">
-              <Info className="h-12 w-12 text-muted-foreground/50" />
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-red-500 hover:bg-red-50"
+                            onClick={() => removeRow(row.internalId)}
+                            // Prevent deleting the only row if it's the last empty one, unless explicit intention
+                            disabled={rows.length === 1 && row.productId === 0}
+                          >
+                            <XIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
-            <h3 className="text-xl font-semibold text-foreground">
-              Start Adding Products
-            </h3>
-            <p className="text-muted-foreground max-w-sm mt-2 text-sm">
-              Your ledger entry is currently empty. Use the{" "}
-              <strong>Add Products</strong> search bar above to select items and
-              populate this table.
-            </p>
-          </div>
-        )}
+            <div className="p-4 bg-muted/20 border-t flex justify-end items-center gap-4">
+              <div className="text-xl font-bold">
+                Grand Total:{" "}
+                <span className="text-primary">
+                  ₹{grandTotal.toLocaleString("en-IN")}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="flex justify-end gap-4 pb-10">
-          <Button variant="outline" size="lg" onClick={() => navigate("/")}>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => navigate(-1)}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
-          <Button size="lg" onClick={handleSubmit} disabled={rows.length === 0}>
-            Submit Ledger Entry
+          <Button
+            size="lg"
+            onClick={handleSubmit}
+            disabled={
+              isSubmitting ||
+              !selectedCustomerId ||
+              rows.filter((r) => r.productId !== 0).length === 0
+            }
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...
+              </>
+            ) : (
+              "Submit Ledger Entry"
+            )}
           </Button>
         </div>
       </div>

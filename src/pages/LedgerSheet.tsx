@@ -1,458 +1,9 @@
-// import { useState, useEffect } from 'react';
-// import { Button } from '@/components/ui/button';
-// import { Card, CardContent } from '@/components/ui/card';
-// import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-// import { Input } from '@/components/ui/input';
-// import { Label } from '@/components/ui/label';
-// import { Badge } from '@/components/ui/badge';
-// import {
-//   Dialog,
-//   DialogContent,
-//   DialogDescription,
-//   DialogFooter,
-//   DialogHeader,
-//   DialogTitle,
-// } from "@/components/ui/dialog";
-// import {
-//   Command,
-//   CommandEmpty,
-//   CommandGroup,
-//   CommandInput,
-//   CommandItem,
-//   CommandList
-// } from '@/components/ui/command';
-// import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-// import {
-//   Plus,
-//   Download,
-//   X,
-//   ChevronDown,
-//   ChevronUp,
-//   Check,
-//   ChevronsUpDown,
-//   Loader2,
-//   ChevronLeft,
-//   ChevronRight,
-//   Eye
-// } from 'lucide-react';
-// import { useNavigate } from 'react-router-dom';
-// import { useAppDispatch, useAppSelector } from '@/app/hooks';
-// import { fetchLedgerEntries, setPage, setFilters, resetFilters } from '@/app/ledgerSheetSlice';
-// import { fetchCustomers } from '@/app/customerSlice';
-// import { cn } from '@/lib/utils';
-// import { format } from 'date-fns';
-
-// // --- Helper Component: Customer Filter ---
-// function CustomerFilterCombobox({
-//   customers,
-//   value,
-//   onChange
-// }: {
-//   customers: any[],
-//   value: string,
-//   onChange: (id: string) => void
-// }) {
-//   const [open, setOpen] = useState(false);
-//   const selectedCustomer = customers.find(c => (c.id || c.customerId).toString() === value);
-
-//   return (
-//     <Popover open={open} onOpenChange={setOpen}>
-//       <PopoverTrigger asChild>
-//         <Button
-//           variant="outline"
-//           role="combobox"
-//           aria-expanded={open}
-//           className="w-full justify-between bg-white border-input"
-//         >
-//           {selectedCustomer ? selectedCustomer.firstname : "Filter by Customer..."}
-//           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-//         </Button>
-//       </PopoverTrigger>
-//       <PopoverContent className="w-[250px] p-0">
-//         <Command>
-//           <CommandInput placeholder="Search customer..." />
-//           <CommandList>
-//             <CommandEmpty>No customer found.</CommandEmpty>
-//             <CommandGroup>
-//               <CommandItem
-//                   value="all_customers_reset_value"
-//                   onSelect={() => {
-//                     onChange("");
-//                     setOpen(false);
-//                   }}
-//                   className="text-muted-foreground italic border-b"
-//                 >
-//                   <X className="mr-2 h-4 w-4" />
-//                   Clear Customer Filter
-//               </CommandItem>
-//               {customers.map((customer) => {
-//                  const id = (customer.id || customer.customerId).toString();
-//                  return (
-//                   <CommandItem
-//                     key={id}
-//                     value={customer.firstname}
-//                     onSelect={() => {
-//                       onChange(id);
-//                       setOpen(false);
-//                     }}
-//                   >
-//                     <Check
-//                       className={cn(
-//                         "mr-2 h-4 w-4",
-//                         value === id ? "opacity-100" : "opacity-0"
-//                       )}
-//                     />
-//                     {customer.firstname} {customer.lastname}
-//                   </CommandItem>
-//                 );
-//               })}
-//             </CommandGroup>
-//           </CommandList>
-//         </Command>
-//       </PopoverContent>
-//     </Popover>
-//   );
-// }
-
-// export default function LedgerSheetPage() {
-//   const navigate = useNavigate();
-//   const dispatch = useAppDispatch();
-
-//   // Redux
-//   const {
-//     entries,
-//     loading,
-//     totalPages,
-//     totalElements,
-//     currentPage,
-//     filterCustomerId,
-//     filterStartDate,
-//     filterEndDate
-//   } = useAppSelector((state) => state.ledgerSheet);
-  
-//   const { customers } = useAppSelector((state) => state.customer);
-
-//   // Local State
-//   const [expandedRows, setExpandedRows] = useState<number[]>([]);
-//   const [showExportDialog, setShowExportDialog] = useState(false);
-  
-//   // Export State
-//   const [exportStart, setExportStart] = useState('');
-//   const [exportEnd, setExportEnd] = useState('');
-//   const [exportCustomer, setExportCustomer] = useState('');
-
-//   // Init
-//   useEffect(() => {
-//     dispatch(fetchCustomers());
-//     dispatch(fetchLedgerEntries());
-//   }, [dispatch]);
-
-//   // --- Filters & Pagination ---
-
-//   const handleFilterChange = (key: 'customerId' | 'startDate' | 'endDate', value: string) => {
-//     // Update state immediately
-//     dispatch(setFilters({ [key]: value }));
-//     // Fetch new data with updated filters (slice logic handles API switch)
-//     dispatch(fetchLedgerEntries());
-//   };
-
-//   const handleResetFilters = () => {
-//     dispatch(resetFilters());
-//     dispatch(fetchLedgerEntries());
-//   };
-
-//   const handlePageChange = (newPage: number) => {
-//     if (newPage >= 0 && newPage < totalPages) {
-//       dispatch(setPage(newPage));
-//       dispatch(fetchLedgerEntries());
-//     }
-//   };
-
-//   const toggleRow = (id: number) => {
-//     setExpandedRows(prev =>
-//       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-//     );
-//   };
-
-//   // --- Render ---
-
-//   return (
-//     <main className="min-h-screen bg-muted/10 p-4 md:p-8 font-sans">
-//       <div className="max-w-[1600px] mx-auto space-y-6">
-        
-//         {/* Header */}
-//         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-//           <div>
-//             <h1 className="text-2xl font-bold tracking-tight text-foreground">Ledger Sheet</h1>
-//             <p className="text-muted-foreground text-sm">Track all journal entries & transactions</p>
-//           </div>
-//           <div className="flex gap-2">
-//             <Button variant="outline" onClick={() => setShowExportDialog(true)} className="gap-2">
-//               <Download className="w-4 h-4" /> Export
-//             </Button>
-//             <Button onClick={() => navigate('/ledger/add')} className="gap-2">
-//               <Plus className="w-4 h-4" /> New Entry
-//             </Button>
-//           </div>
-//         </div>
-
-//         {/* Filters Bar */}
-//         <Card className="border-none shadow-sm bg-white">
-//           <CardContent className="p-4">
-//             <div className="flex flex-col md:flex-row gap-4 items-end">
-              
-//               {/* Date Filters */}
-//               <div className="flex gap-2 items-end">
-//                 <div className="space-y-1">
-//                   <Label className="text-xs text-muted-foreground">From</Label>
-//                   <Input
-//                     type="date"
-//                     className="h-9 w-[140px]"
-//                     value={filterStartDate}
-//                     onChange={(e) => handleFilterChange('startDate', e.target.value)}
-//                   />
-//                 </div>
-//                 <div className="space-y-1">
-//                   <Label className="text-xs text-muted-foreground">To</Label>
-//                   <Input
-//                     type="date"
-//                     className="h-9 w-[140px]"
-//                     value={filterEndDate}
-//                     onChange={(e) => handleFilterChange('endDate', e.target.value)}
-//                   />
-//                 </div>
-//               </div>
-
-//               {/* Customer Filter */}
-//               <div className="flex-1 md:max-w-[300px] space-y-1">
-//                 <Label className="text-xs text-muted-foreground">Customer</Label>
-//                 <CustomerFilterCombobox
-//                   customers={customers}
-//                   value={filterCustomerId}
-//                   onChange={(val) => handleFilterChange('customerId', val)}
-//                 />
-//               </div>
-
-//               {/* Active Filter Indicator & Reset */}
-//               <div className="flex-1 flex items-center justify-end">
-//                  {(filterCustomerId || filterStartDate || filterEndDate) && (
-//                   <Button
-//                     variant="ghost"
-//                     size="sm"
-//                     onClick={handleResetFilters}
-//                     className="text-red-600 hover:text-red-700 hover:bg-red-50 h-9"
-//                   >
-//                     <X className="w-4 h-4 mr-1" /> Clear Filters
-//                   </Button>
-//                  )}
-//               </div>
-
-//             </div>
-//           </CardContent>
-//         </Card>
-
-//         {/* Ledger Table */}
-//         <Card className="border shadow-sm overflow-hidden bg-white">
-//           <div className="overflow-x-auto">
-//             <Table>
-//               <TableHeader>
-//                 <TableRow className="bg-muted/50 hover:bg-muted/50">
-//                   <TableHead className="w-[50px]"></TableHead>
-//                   <TableHead className="w-[150px]">Created At</TableHead>
-//                   <TableHead className="w-[200px]">Customer</TableHead>
-//                   <TableHead className="w-[100px]">Items</TableHead>
-//                   <TableHead>Status</TableHead>
-//                   <TableHead className="text-right">Total Amount</TableHead>
-//                 </TableRow>
-//               </TableHeader>
-//               <TableBody>
-//                 {loading ? (
-//                    <TableRow>
-//                      <TableCell colSpan={6} className="h-32 text-center">
-//                        <div className="flex justify-center items-center gap-2 text-muted-foreground">
-//                          <Loader2 className="h-5 w-5 animate-spin" /> Loading data...
-//                        </div>
-//                      </TableCell>
-//                    </TableRow>
-//                 ) : entries.length === 0 ? (
-//                    <TableRow>
-//                      <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-//                        No ledger entries found.
-//                      </TableCell>
-//                    </TableRow>
-//                 ) : (
-//                   entries.map((entry) => {
-//                     const isExpanded = expandedRows.includes(entry.ledgerId); // Uses ledgerId
-//                     const dateObj = new Date(entry.createdAt);
-
-//                     return (
-//                       <>
-//                         {/* Main Entry Row */}
-//                         <TableRow
-//                           key={`entry-${entry.ledgerId}`}
-//                           className={cn("cursor-pointer transition-colors", isExpanded ? "bg-blue-50/50" : "hover:bg-muted/30")}
-//                           onClick={() => toggleRow(entry.ledgerId)}
-//                         >
-//                           <TableCell>
-//                             {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-//                           </TableCell>
-//                           <TableCell className="font-medium text-sm">
-//                             {format(dateObj, 'dd MMM yyyy')}
-//                             <div className="text-[11px] text-muted-foreground">{format(dateObj, 'hh:mm a')}</div>
-//                           </TableCell>
-//                           <TableCell className="font-semibold text-foreground">
-//                             {entry.customerName}
-//                           </TableCell>
-//                           <TableCell className="text-muted-foreground text-sm">
-//                             {entry.items.length} Items
-//                           </TableCell>
-//                           <TableCell>
-//                             <Badge variant="outline" className={cn(
-//                               "text-[10px] px-2 py-0 h-5",
-//                               entry.paymentStatus === 'PENDING' ? "border-amber-500 text-amber-700 bg-amber-50" : "border-green-500 text-green-700 bg-green-50"
-//                             )}>
-//                               {entry.paymentStatus}
-//                             </Badge>
-//                           </TableCell>
-//                           <TableCell className="text-right font-bold font-mono text-base">
-//                             ₹{entry.totalAmount.toLocaleString('en-IN')}
-//                           </TableCell>
-//                         </TableRow>
-
-//                         {/* Expanded Item Details */}
-//                         {isExpanded && (
-//                           <TableRow className="bg-muted/5 hover:bg-muted/5">
-//                             <TableCell colSpan={6} className="p-0">
-//                               <div className="px-6 py-4 border-b shadow-inner bg-slate-50">
-//                                 <div className="flex justify-between items-center mb-2">
-//                                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Items Breakdown</p>
-//                                   <span className="text-xs text-slate-400">Ledger ID: #{entry.ledgerId}</span>
-//                                 </div>
-                                
-//                                 <div className="border rounded-md overflow-hidden bg-white">
-//                                   <Table>
-//                                     <TableHeader>
-//                                       <TableRow className="bg-slate-100 border-b border-slate-200 hover:bg-slate-100">
-//                                         <TableHead className="h-8 text-[11px] font-bold text-slate-600">Date</TableHead>
-//                                         <TableHead className="h-8 text-[11px] font-bold text-slate-600 text-center">Product ID</TableHead>
-//                                         <TableHead className="h-8 text-[11px] font-bold text-slate-600 text-center">Size (WxH)</TableHead>
-//                                         <TableHead className="h-8 text-[11px] font-bold text-slate-600 text-center">SqFt</TableHead>
-//                                         <TableHead className="h-8 text-[11px] font-bold text-slate-600 text-center">Qty</TableHead>
-//                                         <TableHead className="h-8 text-[11px] font-bold text-slate-600 text-right">Rate</TableHead>
-//                                         <TableHead className="h-8 text-[11px] font-bold text-slate-600 text-right">Amount</TableHead>
-//                                         <TableHead className="h-8 w-[40px]"></TableHead>
-//                                       </TableRow>
-//                                     </TableHeader>
-//                                     <TableBody>
-//                                       {entry.items.map((item) => (
-//                                         <TableRow key={`item-${item.id}`} className="border-b last:border-0 h-9 hover:bg-slate-50">
-//                                           <TableCell className="py-1 text-xs text-slate-600">{item.date}</TableCell>
-//                                           <TableCell className="py-1 text-xs text-center font-mono text-slate-500">#{item.productId}</TableCell>
-//                                           <TableCell className="py-1 text-xs text-center">{item.width} x {item.height}</TableCell>
-//                                           <TableCell className="py-1 text-xs text-center text-slate-500">{item.sqft}</TableCell>
-//                                           <TableCell className="py-1 text-xs text-center font-medium">{item.quantity}</TableCell>
-//                                           <TableCell className="py-1 text-xs text-right text-slate-500">₹{item.ratePerPiece}</TableCell>
-//                                           <TableCell className="py-1 text-xs text-right font-bold text-slate-800">₹{item.amount}</TableCell>
-//                                           <TableCell className="py-1 text-center">
-//                                             {item.imageUrl && (
-//                                               <Button variant="ghost" size="icon" className="h-6 w-6" title="View Image">
-//                                                 <Eye className="h-3 w-3 text-blue-500" onClick={() => window.open(item.imageUrl, '_blank')} />
-//                                               </Button>
-//                                             )}
-//                                           </TableCell>
-//                                         </TableRow>
-//                                       ))}
-//                                     </TableBody>
-//                                   </Table>
-//                                 </div>
-//                               </div>
-//                             </TableCell>
-//                           </TableRow>
-//                         )}
-//                       </>
-//                     );
-//                   })
-//                 )}
-//               </TableBody>
-//             </Table>
-//           </div>
-
-//           {/* Footer Pagination */}
-//           <div className="flex items-center justify-between px-4 py-3 border-t bg-slate-50">
-//              <div className="text-xs text-muted-foreground">
-//                Showing {entries.length} of {totalElements} entries
-//              </div>
-//              <div className="flex items-center gap-2">
-//                <Button
-//                  variant="outline"
-//                  size="icon"
-//                  className="h-8 w-8 bg-white"
-//                  onClick={() => handlePageChange(currentPage - 1)}
-//                  disabled={currentPage === 0 || loading}
-//                >
-//                  <ChevronLeft className="h-4 w-4" />
-//                </Button>
-//                <span className="text-xs font-medium px-2 min-w-[80px] text-center">
-//                  Page {currentPage + 1} of {totalPages || 1}
-//                </span>
-//                <Button
-//                  variant="outline"
-//                  size="icon"
-//                  className="h-8 w-8 bg-white"
-//                  onClick={() => handlePageChange(currentPage + 1)}
-//                  disabled={currentPage >= totalPages - 1 || loading}
-//                >
-//                  <ChevronRight className="h-4 w-4" />
-//                </Button>
-//              </div>
-//           </div>
-//         </Card>
-//       </div>
-
-//       {/* Export Dialog (UI Only) */}
-//       <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
-//         <DialogContent className="sm:max-w-[425px]">
-//           <DialogHeader>
-//             <DialogTitle>Export Ledger</DialogTitle>
-//             <DialogDescription>
-//               Select criteria to generate an export file.
-//             </DialogDescription>
-//           </DialogHeader>
-//           <div className="grid gap-4 py-4">
-//             <div className="grid grid-cols-2 gap-4">
-//               <div className="space-y-2">
-//                 <Label>From Date</Label>
-//                 <Input type="date" value={exportStart} onChange={(e) => setExportStart(e.target.value)} />
-//               </div>
-//               <div className="space-y-2">
-//                 <Label>To Date</Label>
-//                 <Input type="date" value={exportEnd} onChange={(e) => setExportEnd(e.target.value)} />
-//               </div>
-//             </div>
-//             <div className="space-y-2">
-//               <Label>Customer (Optional)</Label>
-//               <CustomerFilterCombobox customers={customers} value={exportCustomer} onChange={setExportCustomer} />
-//             </div>
-//           </div>
-//           <DialogFooter>
-//             <Button variant="outline" onClick={() => setShowExportDialog(false)}>Cancel</Button>
-//             <Button onClick={() => { setShowExportDialog(false); /* Trigger export API later */ }}>Download Excel</Button>
-//           </DialogFooter>
-//         </DialogContent>
-//       </Dialog>
-
-//     </main>
-//   );
-// }
-
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -695,12 +246,13 @@ export default function LedgerSheetPage() {
                   <TableHead className="w-[100px] text-xs font-bold text-slate-700">Date</TableHead>
                   <TableHead className="w-[180px] text-xs font-bold text-slate-700">Customer</TableHead>
                   <TableHead className="w-[200px] text-xs font-bold text-slate-700">Product</TableHead>
+                  <TableHead className="w-[100px] text-xs font-bold text-slate-700 text-center">Location</TableHead>
                   <TableHead className="w-[120px] text-xs font-bold text-slate-700 text-center">Size (WxH)</TableHead>
                   <TableHead className="w-[80px] text-xs font-bold text-slate-700 text-center">SqFt</TableHead>
                   <TableHead className="w-[60px] text-xs font-bold text-slate-700 text-center">Qty</TableHead>
                   <TableHead className="w-[100px] text-xs font-bold text-slate-700 text-right">Rate/Pc</TableHead>
+                  <TableHead className="w-[100px] text-xs font-bold text-slate-700 text-right">Total Sqft</TableHead>
                   <TableHead className="w-[100px] text-xs font-bold text-slate-700 text-right">Amount</TableHead>
-                  <TableHead className="w-[100px] text-xs font-bold text-slate-700 text-center">Location</TableHead>
                   <TableHead className="w-[60px] text-xs font-bold text-slate-700 text-center">Img</TableHead>
                 </TableRow>
               </TableHeader>
@@ -746,6 +298,10 @@ export default function LedgerSheetPage() {
                         {row.productName}
                         <div className="text-[10px] text-muted-foreground font-normal">SKU #{row.productId}</div>
                       </TableCell>
+                      {/* Location */}
+                      <TableCell className="text-center">
+                      {row.location}
+                      </TableCell>
                       
                       {/* Dimensions */}
                       <TableCell className="text-center text-xs text-slate-600">
@@ -766,16 +322,16 @@ export default function LedgerSheetPage() {
                       <TableCell className="text-right text-xs text-slate-600">
                         ₹{row.ratePerPiece}
                       </TableCell>
+                      {/* Total Sqft */}
+                      <TableCell className="text-right text-xs text-slate-600">
+                        {row.totalSqft || row.sqFt * row.quantity}
+                      </TableCell>
                       
                       {/* Amount */}
                       <TableCell className="text-right text-xs font-bold text-slate-800">
                         ₹{row.amount}
                       </TableCell>
                       
-                      {/* Status */}
-                      <TableCell className="text-center">
-                      {row.location}
-                      </TableCell>
                       
                       {/* Image */}
                       <TableCell className="text-center">
