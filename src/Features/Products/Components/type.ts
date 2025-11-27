@@ -1,5 +1,5 @@
-export type ProductResponse = {
-  content: Product[];
+export interface PaginatedResponse<T> {
+  content: T[];
   pageable: Pageable;
   last: boolean;
   totalPages: number;
@@ -10,42 +10,38 @@ export type ProductResponse = {
   size: number;
   number: number;
   empty: boolean;
-  productId: number;
-  attributes: Attribute[];
-  name: string;
-  subheading: string;
-  status: "active" | "draft " | "secondary";
-};
+}
 
 export interface Product {
   productId: number;
   tags: string | null;
   defaultSku: string;
   name: string;
-  subheading: string;
-  description: string;
+  subheading: string | null;
+  description: string | null;
   groupCompanyId: number;
   companyId: number;
   locationId: number;
   branchId: number;
-  createdDate: string;
-  productType: ProductType;
-  productTypeId: string;
-  productTypeName: string;
+  createdDate: string | null;
+  productTypeId: number;
   status: string;
   attributes: Attribute[];
 }
 
 export type Attribute = {
-  imgs: Image[];
-  size: string;
-  color: string;
+  imgs?: Image[]; // Made optional as it wasn't in your JSON snippet, but good to keep if needed
+  title?: string;
+  width?: number;
+  height?: number;
+  size?: string;
+  color?: string;
   price: number;
   sku: string;
-  variation_id: number;
+  variation_id?: number;
   quantity: number;
-  fit: string;
-  pattern: string;
+  fit?: string;
+  pattern?: string;
 };
 
 export type Image = {
@@ -53,14 +49,6 @@ export type Image = {
   img_url: string;
   img_name: string;
   img_type: string;
-};
-
-type ProductType = {
-  id: number;
-  productType: string;
-  groupCompanyId: number;
-  companyId: number;
-  categoryMappingId: number;
 };
 
 type Pageable = {

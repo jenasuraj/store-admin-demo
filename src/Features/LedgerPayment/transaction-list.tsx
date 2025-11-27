@@ -3,9 +3,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import {
   Table,
@@ -38,7 +35,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-  ArrowLeft,
   Download,
   X,
   Check,
@@ -49,18 +45,21 @@ import {
   CreditCard,
   Banknote,
   Landmark,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import {
   fetchTransactions,
   setTransactionFilters,
   resetTransactionFilters,
-  Transaction,
+  setPage, 
 } from "@/app/transactionSlice";
 import { fetchCustomers } from "@/app/customerSlice";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
 
 // --- Helper Component: Customer Filter ---
 function CustomerFilterCombobox({
@@ -149,9 +148,12 @@ export default function TransactionHistoryPage() {
     filterCustomerId,
     filterStartDate,
     filterEndDate,
-  } = useAppSelector((state) => state.transaction);
+    currentPage,
+    totalPages,
+    totalElements,
+  } = useAppSelector((state: any) => state.transaction);
 
-  const { customers } = useAppSelector((state) => state.customer);
+  const { customers } = useAppSelector((state: any) => state.customer);
 
   // Local State
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -177,6 +179,15 @@ export default function TransactionHistoryPage() {
     dispatch(fetchTransactions());
   };
 
+  // --- Pagination Handler ---
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 0 && newPage < totalPages) {
+      // Assuming your slice exports a 'setPage' or similar action
+      dispatch(setPage(newPage)); 
+      dispatch(fetchTransactions());
+    }
+  };
+
   // --- Helper for Payment Mode Icon ---
   const getPaymentIcon = (mode: string) => {
     switch (mode) {
@@ -195,9 +206,6 @@ export default function TransactionHistoryPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            {/* <Button variant="outline" size="icon" onClick={() => navigate(-1)} className="h-9 w-9">
-              <ArrowLeft className="h-4 w-4" />
-            </Button> */}
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">
                 Transaction History
@@ -318,7 +326,7 @@ export default function TransactionHistoryPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  transactions.map((txn, index) => (
+                  transactions.map((txn: any, index: number) => (
                     <TableRow
                       key={index}
                       className="hover:bg-slate-50 transition-colors border-b last:border-0"
@@ -340,13 +348,15 @@ export default function TransactionHistoryPage() {
 
                       {/* Mode */}
                       <TableCell>
-                        <Badge
-                          variant="outline"
-                          className="font-medium min-w-[80%] flex justify-center items-center gap-1.5 bg-slate-50"
-                        >
-                          {getPaymentIcon(txn.paymentMode)}
-                          <p>{txn.paymentMode.replace("_", " ")}</p>
-                        </Badge>
+                        <div className="flex justify-center">
+                          <Badge
+                            variant="outline"
+                            className="font-medium flex items-center gap-1.5 bg-slate-50 px-3 py-1"
+                          >
+                            {getPaymentIcon(txn.paymentMode)}
+                            <span className="capitalize">{txn.paymentMode?.toLowerCase().replace("_", " ")}</span>
+                          </Badge>
+                        </div>
                       </TableCell>
 
                       {/* Description */}
@@ -384,23 +394,34 @@ export default function TransactionHistoryPage() {
             </Table>
           </div>
 
-          {/* Footer Summary */}
-          <div className="bg-slate-50 px-6 py-4 border-t flex justify-end items-center gap-6">
-            <span className="text-sm text-muted-foreground">
-              Count:{" "}
-              <span className="font-medium text-foreground">
-                {transactions.length}
-              </span>
-            </span>
-            <div className="text-lg font-bold">
-              Total Received:{" "}
-              <span className="text-emerald-600">
-                ₹
-                {transactions
-                  .reduce((sum, t) => sum + t.amount, 0)
-                  .toLocaleString("en-IN")}
-              </span>
-            </div>
+          {/* Footer with Pagination (Replaces Total Count/Received) */}
+          <div className="flex items-center justify-between px-4 py-3 border-t bg-slate-50">
+             <div className="text-xs text-muted-foreground">
+               Showing {transactions.length} items (Total: {totalElements})
+             </div>
+             <div className="flex items-center gap-2">
+               <Button 
+                 variant="outline" 
+                 size="icon" 
+                 className="h-8 w-8 bg-white"
+                 onClick={() => handlePageChange(currentPage - 1)}
+                 disabled={currentPage === 0 || loading}
+               >
+                 <ChevronLeft className="h-4 w-4" />
+               </Button>
+               <span className="text-xs font-medium px-2 min-w-[80px] text-center">
+                 Page {currentPage + 1} of {totalPages || 1}
+               </span>
+               <Button 
+                 variant="outline" 
+                 size="icon" 
+                 className="h-8 w-8 bg-white" 
+                 onClick={() => handlePageChange(currentPage + 1)}
+                 disabled={currentPage >= totalPages - 1 || loading}
+               >
+                 <ChevronRight className="h-4 w-4" />
+               </Button>
+             </div>
           </div>
         </Card>
       </div>

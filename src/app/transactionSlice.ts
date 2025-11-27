@@ -57,8 +57,8 @@ export const fetchTransactions = createAsyncThunk(
       // Determine which endpoint to use based on filters
       const hasFilters = filterCustomerId || filterStartDate || filterEndDate;
       const endpoint = hasFilters 
-        ? `${BASE_URL}/api/payments/filter` 
-        : `${BASE_URL}/api/payments/ledgerPayments`;
+        ? `${BASE_URL}/api/payments/filter?sortField=id&direction=desc` 
+        : `${BASE_URL}/api/payments/ledgerPayments?sortField=id&direction=desc`;
 
       // Build Query Params
       const params: any = {
