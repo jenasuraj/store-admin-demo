@@ -2,10 +2,13 @@ import { RootState } from "@/app/store";
 import axios from "axios";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { BASE_URL } from "@/lib/constants";
-import { ProductResponse } from "@/Features/Products/Components/type";
+import {
+  PaginatedResponse,
+  Product,
+} from "@/Features/Products/Components/type";
 
 export interface productState {
-  entity: ProductResponse | null;
+  entity: PaginatedResponse<Product> | null;
   loading: boolean;
   error: boolean;
 }
@@ -34,7 +37,7 @@ const fetchProduct = async (attribute: string | null) => {
 };
 
 export const fetchProductAsync = createAsyncThunk<
-  ProductResponse,
+  PaginatedResponse<Product>,
   string | null
 >("product/getProduct", async (attribute) => {
   const res = await fetchProduct(attribute || "");
