@@ -232,18 +232,14 @@ export default function ExportLedgerButton() {
         const tableBody = monthData.entries.map((entry) => [
           format(new Date(entry.date), "dd-MMM-yyyy"),
           entry.productName,
-          entry.productName.toLowerCase().includes("standee") ||
-          entry.productName.toLowerCase().includes("frame")
-            ? "-"
-            : `(${entry.width}x${entry.height})`,
-          entry.width,
           entry.height,
+          entry.width,
           entry.sqFt,
-          entry.totalSqft,
+          entry.sqFt * entry.quantity,
           entry.basePrice,
           entry.ratePerPiece,
           entry.quantity,
-          entry.extraCharge > 0,
+          entry.extraCharge,
           entry.amount.toLocaleString("en-IN"),
         ]);
 
@@ -252,10 +248,9 @@ export default function ExportLedgerButton() {
           head: [
             [
               "Date",
-              "Name",
-              "Description",
-              "Width",
+              "Item Name",
               "Height",
+              "Width",
               "Sq ft",
               "Total sq ft",
               "Rate",
@@ -267,7 +262,7 @@ export default function ExportLedgerButton() {
           ],
           body: tableBody,
           theme: "grid",
-          styles: { fontSize: 8, cellPadding: 2 },
+          styles: { fontSize: 6, cellPadding: 2 },
           headStyles: {
             fillColor: [255, 255, 255],
             textColor: [0, 0, 0],

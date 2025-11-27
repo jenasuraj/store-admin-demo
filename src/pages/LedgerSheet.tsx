@@ -156,18 +156,11 @@ export default function LedgerSheetPage() {
 
   const { customers } = useAppSelector((state) => state.customer);
 
-  // Local State
-  const [showExportDialog, setShowExportDialog] = useState(false);
-
   // Edit State
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Export State
-  const [exportStart, setExportStart] = useState("");
-  const [exportEnd, setExportEnd] = useState("");
-  const [exportCustomer, setExportCustomer] = useState("");
 
   // Init
   useEffect(() => {
@@ -297,7 +290,7 @@ export default function LedgerSheetPage() {
   };
 
   return (
-    <main className="min-h-screen bg-muted/10 p-4 md:p-8 font-sans">
+    <main className="min-h-screen bg-muted/10 font-sans">
       <div className="max-w-[1600px] mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
