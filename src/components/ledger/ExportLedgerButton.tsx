@@ -26,22 +26,32 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Loader2,
-  FileText,
   Check,
   ChevronsUpDown,
   X,
   Download,
+  FileSpreadsheet, 
+  FileText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BASE_URL } from "@/lib/constants";
 import { useAppSelector } from "@/app/hooks";
 
-// Real imports for PDF generation
+
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-// --- Types for API Response ---
+
+import XLSX from "xlsx-js-style";
+
 interface LedgerEntry {
   id: number;
   productId: number;
@@ -83,7 +93,6 @@ interface MonthData {
   };
 }
 
-// --- Customer Filter Component ---
 function CustomerFilterCombobox({
   customers,
   value,
@@ -99,7 +108,6 @@ function CustomerFilterCombobox({
   );
 
   return (
-    // FIX: modal={true} ensures Popover works correctly inside a Dialog
     <Popover open={open} onOpenChange={setOpen} modal={true}>
       <PopoverTrigger asChild>
         <Button
@@ -131,8 +139,6 @@ function CustomerFilterCombobox({
               </CommandItem>
               {customers.map((customer) => {
                 const id = (customer.id || customer.customerId).toString();
-                // FIX: Ensure 'value' is unique and searchable (Name + ID)
-                // This prevents selection bugs in cmdk when names are duplicates
                 const uniqueSearchValue = `${customer.firstname} ${
                   customer.lastname || ""
                 } ${id}`;
@@ -171,11 +177,11 @@ export default function ExportLedgerButton() {
   const [customerId, setCustomerId] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [exportFormat, setExportFormat] = useState<"pdf" | "excel">("pdf");
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerate = async () => {
     if (!customerId || !startDate || !endDate) {
-      // You can replace this with your toast notification if you prefer
       alert("All fields (Customer, Start Date, End Date) are mandatory.");
       return;
     }
@@ -183,7 +189,6 @@ export default function ExportLedgerButton() {
     setIsGenerating(true);
 
     try {
-      // 1. Fetch Data
       const response = await axios.get<MonthData[]>(
         `${BASE_URL}/api/ledger/ledger-sheet`,
         {
@@ -199,183 +204,261 @@ export default function ExportLedgerButton() {
         return;
       }
 
-      // 2. Generate PDF
-      const doc = new jsPDF();
       const customer = customers.find(
         (c) => (c.id || c.customerId).toString() === customerId
       );
       const customerName = customer ? `${customer.firstname}` : "Customer";
 
-      // Header
-      doc.setFontSize(18);
-      doc.text(`Ledger Statement - ${customerName}`, 14, 15);
-      doc.setFontSize(10);
-      doc.text(
-        `Period: ${format(new Date(startDate), "dd MMM yyyy")} to ${format(
-          new Date(endDate),
-          "dd MMM yyyy"
-        )}`,
-        14,
-        22
-      );
+      if (exportFormat === "pdf") {
+        generatePDF(ledgerData, customerName);
+      } else {
+        generateExcel(ledgerData, customerName);
+      }
 
-      let finalY = 25;
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Generation Error:", error);
+      alert("Failed to generate report. Check console for details.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
-      // Process Month Blocks
-      ledgerData.forEach((monthData) => {
-        // Month Title
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.text(monthData.month, 14, finalY + 10);
+  const generatePDF = (ledgerData: MonthData[], customerName: string) => {
+    const doc = new jsPDF();
 
-        // Entries Table
-        const tableBody = monthData.entries.map((entry) => [
+    doc.setFontSize(18);
+    doc.text(`Ledger Statement - ${customerName}`, 14, 15);
+    doc.setFontSize(10);
+    doc.text(
+      `Period: ${format(new Date(startDate), "dd MMM yyyy")} to ${format(
+        new Date(endDate),
+        "dd MMM yyyy"
+      )}`,
+      14,
+      22
+    );
+
+    let finalY = 25;
+
+    ledgerData.forEach((monthData) => {
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text(monthData.month, 14, finalY + 10);
+
+      const tableBody = monthData.entries.map((entry) => [
+        format(new Date(entry.date), "dd-MMM-yyyy"),
+        entry.productName,
+        entry.height,
+        entry.width,
+        entry.sqFt,
+        (entry.sqFt * entry.quantity).toFixed(2),
+        entry.basePrice,
+        entry.ratePerPiece,
+        entry.quantity,
+        entry.extraCharge,
+        entry.amount.toLocaleString("en-IN"),
+      ]);
+
+      autoTable(doc, {
+        startY: finalY + 15,
+        head: [
+          [
+            "Date",
+            "Item Name",
+            "H",
+            "W",
+            "Sq ft",
+            "Tot Sqft",
+            "Rate",
+            "1pc Rate",
+            "Qty",
+            "Extra",
+            "Amount",
+          ],
+        ],
+        body: tableBody,
+        theme: "grid",
+        styles: { fontSize: 6, cellPadding: 2 },
+        headStyles: {
+          fillColor: [255, 255, 255],
+          textColor: [0, 0, 0],
+          fontStyle: "bold",
+          lineWidth: 0.1,
+        },
+        columnStyles: {
+          0: { cellWidth: 18 },
+          1: { cellWidth: 25 },
+          10: { halign: "right" },
+        },
+        margin: { left: 14, right: 14 },
+      });
+
+      // @ts-ignore
+      finalY = doc.lastAutoTable.finalY;
+
+      // Total Row
+      autoTable(doc, {
+        startY: finalY,
+        body: [
+          [
+            "", "", "", "", "", "", "", "", "",
+            "Total",
+            monthData.stats.total.toLocaleString("en-IN"),
+          ],
+        ],
+        theme: "plain",
+        styles: { fontStyle: "bold", fontSize: 9 },
+        columnStyles: { 10: { halign: "right" } },
+        margin: { left: 14, right: 14 },
+      });
+      // @ts-ignore
+      finalY = doc.lastAutoTable.finalY;
+
+      if (monthData.stats.paymentHistory && monthData.stats.paymentHistory.length > 0) {
+        const paymentRows = monthData.stats.paymentHistory.map((p) => [
+          format(new Date(p.paymentDate), "dd/MM/yyyy"),
+          `Payment Received (${p.paymentMode})`,
+          "", "", "", "", "", "", "", "",
+          p.amount.toLocaleString("en-IN"),
+        ]);
+
+        autoTable(doc, {
+          startY: finalY,
+          body: paymentRows,
+          theme: "plain",
+          styles: { fontSize: 9 },
+          columnStyles: { 10: { halign: "right" } },
+          margin: { left: 14, right: 14 },
+        });
+        // @ts-ignore
+        finalY = doc.lastAutoTable.finalY;
+      }
+
+      autoTable(doc, {
+        startY: finalY,
+        body: [
+          [
+            "", "", "", "", "", "", "", "", "",
+            "Balance",
+            monthData.stats.pending.toLocaleString("en-IN"),
+          ],
+        ],
+        theme: "plain",
+        styles: {
+          fontStyle: "bold",
+          fontSize: 9,
+          fillColor: [255, 255, 0], // Yellow Highlight in PDF
+        },
+        columnStyles: { 10: { halign: "right" } },
+        margin: { left: 14, right: 14 },
+      });
+      // @ts-ignore
+      finalY = doc.lastAutoTable.finalY + 5;
+    });
+
+    doc.save(`Ledger_${customerName}_${startDate}.pdf`);
+  };
+
+  const generateExcel = (ledgerData: MonthData[], customerName: string) => {
+    const wsData: any[][] = [];
+    
+    const highlightRows: number[] = [];
+
+    // wsData.push([`Ledger Statement - ${customerName}`]);
+    // wsData.push([`Period: ${startDate} to ${endDate}`]);  // This block is removed now as per new design requirements according to excel if needed can be added later
+    // wsData.push([]); // Spacer
+
+    ledgerData.forEach((monthData) => {
+      // Month Header
+      wsData.push([monthData.month.toUpperCase()]);
+      
+      // Table Header
+      wsData.push([
+        "Date", "Item Name", "Height", "Width", "Sq ft", "Total sq ft", 
+        "Rate", "1 pc rate", "Qty", "Extra Charge", "Amount"
+      ]);
+
+      // Entries
+      monthData.entries.forEach((entry) => {
+        wsData.push([
           format(new Date(entry.date), "dd-MMM-yyyy"),
           entry.productName,
           entry.height,
           entry.width,
           entry.sqFt,
-          entry.sqFt * entry.quantity,
+          (entry.sqFt * entry.quantity).toFixed(2),
           entry.basePrice,
           entry.ratePerPiece,
           entry.quantity,
           entry.extraCharge,
-          entry.amount.toLocaleString("en-IN"),
+          entry.amount,
         ]);
-
-        autoTable(doc, {
-          startY: finalY + 15,
-          head: [
-            [
-              "Date",
-              "Item Name",
-              "Height",
-              "Width",
-              "Sq ft",
-              "Total sq ft",
-              "Rate",
-              "1 pc rate",
-              "Qty",
-              "Extra Charge",
-              "Amount",
-            ],
-          ],
-          body: tableBody,
-          theme: "grid",
-          styles: { fontSize: 6, cellPadding: 2 },
-          headStyles: {
-            fillColor: [255, 255, 255],
-            textColor: [0, 0, 0],
-            fontStyle: "bold",
-            lineWidth: 0.1,
-          },
-          columnStyles: {
-            0: { cellWidth: 20 }, // Date
-            1: { cellWidth: 25 }, // Name
-            10: { halign: "right" }, // Amount
-          },
-          margin: { left: 14, right: 14 },
-        });
-
-        // @ts-ignore
-        finalY = doc.lastAutoTable.finalY;
-
-        // Total Row
-        autoTable(doc, {
-          startY: finalY,
-          body: [
-            [
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "Total",
-              monthData.stats.total.toLocaleString("en-IN"),
-            ],
-          ],
-          theme: "plain",
-          styles: { fontStyle: "bold", fontSize: 9 },
-          columnStyles: { 10: { halign: "right" } },
-          margin: { left: 14, right: 14 },
-        });
-        // @ts-ignore
-        finalY = doc.lastAutoTable.finalY;
-
-        // Payments
-        if (
-          monthData.stats.paymentHistory &&
-          monthData.stats.paymentHistory.length > 0
-        ) {
-          const paymentRows = monthData.stats.paymentHistory.map((p) => [
-            format(new Date(p.paymentDate), "dd/MM/yyyy"),
-            `Payment Received (${p.paymentMode})`,
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            p.amount.toLocaleString("en-IN"),
-          ]);
-
-          autoTable(doc, {
-            startY: finalY,
-            body: paymentRows,
-            theme: "plain",
-            styles: { fontSize: 9 },
-            columnStyles: { 10: { halign: "right" } },
-            margin: { left: 14, right: 14 },
-          });
-          // @ts-ignore
-          finalY = doc.lastAutoTable.finalY;
-        }
-
-        // Balance Row (Yellow Highlight)
-        autoTable(doc, {
-          startY: finalY,
-          body: [
-            [
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "",
-              "Balance",
-              monthData.stats.pending.toLocaleString("en-IN"),
-            ],
-          ],
-          theme: "plain",
-          styles: {
-            fontStyle: "bold",
-            fontSize: 9,
-            fillColor: [255, 255, 0], // Yellow
-          },
-          columnStyles: { 10: { halign: "right" } },
-          margin: { left: 14, right: 14 },
-        });
-        // @ts-ignore
-        finalY = doc.lastAutoTable.finalY + 5;
       });
 
-      doc.save(`Ledger_${customerName}_${startDate}.pdf`);
-      setIsOpen(false);
-    } catch (error) {
-      console.error("PDF Generation Error:", error);
-      alert("Failed to generate PDF. Check console for details.");
-    } finally {
-      setIsGenerating(false);
-    }
+      // Total Row
+      wsData.push([
+        "", "", "", "", "", "", "", "", "", 
+        "Total", 
+        monthData.stats.total
+      ]);
+      highlightRows.push(wsData.length - 1); 
+
+      // Payment Rows
+      if (monthData.stats.paymentHistory && monthData.stats.paymentHistory.length > 0) {
+        monthData.stats.paymentHistory.forEach((p) => {
+          wsData.push([
+            format(new Date(p.paymentDate), "dd/MM/yyyy"),
+            `Payment Received (${p.paymentMode})`,
+            "", "", "", "", "", "", "", "",
+            p.amount
+          ]);
+        });
+      }
+
+      // Balance Row
+      wsData.push([
+        "", "", "", "", "", "", "", "", "", 
+        "Balance", 
+        monthData.stats.pending
+      ]);
+      highlightRows.push(wsData.length - 1);
+
+      wsData.push([]); 
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    ws["!cols"] = [
+      { wch: 12 }, // Date
+      { wch: 30 }, // Item Name
+      { wch: 8 },  { wch: 8 }, { wch: 8 }, { wch: 10 },
+      { wch: 10 }, { wch: 10 }, { wch: 6 }, { wch: 12 }, { wch: 15 }
+    ];
+
+    
+    highlightRows.forEach((rowIndex) => {
+      for (let colIndex = 0; colIndex <= 10; colIndex++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex });
+        
+        if (!ws[cellAddress]) {
+          ws[cellAddress] = { t: 's', v: '' }; 
+        }
+
+        ws[cellAddress].s = {
+          fill: {
+            fgColor: { rgb: "FFFF00" } 
+          },
+          font: {
+            bold: true
+          }
+        };
+      }
+    });
+
+    XLSX.utils.book_append_sheet(wb, ws, "Ledger");
+    XLSX.writeFile(wb, `Ledger_${customerName}_${startDate}.xlsx`);
   };
 
   return (
@@ -391,9 +474,9 @@ export default function ExportLedgerButton() {
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Download Ledger PDF</DialogTitle>
+            <DialogTitle>Download Ledger</DialogTitle>
             <DialogDescription>
-              Select customer and date range to generate the report.
+              Select criteria and format to generate the report.
             </DialogDescription>
           </DialogHeader>
 
@@ -425,6 +508,32 @@ export default function ExportLedgerButton() {
                 />
               </div>
             </div>
+
+            <div className="space-y-2">
+              <Label>Export Format</Label>
+              <Select
+                value={exportFormat}
+                onValueChange={(val: "pdf" | "excel") => setExportFormat(val)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pdf">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-red-500" />
+                      <span>PDF Document</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="excel">
+                    <div className="flex items-center gap-2">
+                      <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                      <span>Excel Spreadsheet</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <DialogFooter>
@@ -435,7 +544,9 @@ export default function ExportLedgerButton() {
               {isGenerating && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Generate PDF
+              {isGenerating
+                ? "Generating..."
+                : `Download ${exportFormat === "pdf" ? "PDF" : "Excel"}`}
             </Button>
           </DialogFooter>
         </DialogContent>
