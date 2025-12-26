@@ -213,7 +213,7 @@ function RowProductCombobox({
                       />
                       <div className="flex flex-col flex-1">
                         <span className="flex items-center gap-2 font-medium">
-                          {item.name}
+                          {item.attributes[0].title}
                           {isSpecial && (
                             <Badge
                               variant="secondary"
@@ -1221,5 +1221,3 @@ export default function CreateEntryPage() {
     </main>
   );
 }
-
-
