@@ -294,11 +294,14 @@ export default function TransactionHistoryPage() {
                   <TableHead className="w-[200px] text-center text-xs font-bold text-slate-700">
                     Mode
                   </TableHead>
-                  <TableHead className="min-w-[300px] text-xs font-bold text-slate-700">
+                  <TableHead className="min-w-[200px] text-xs font-bold text-slate-700">
                     Description
                   </TableHead>
                   <TableHead className="text-right w-[120px] text-xs font-bold text-slate-700">
                     Amount
+                  </TableHead>
+                  <TableHead className="text-right w-[120px] text-xs font-bold text-slate-700">
+                    Discount
                   </TableHead>
                   <TableHead className="text-center w-[100px] text-xs font-bold text-slate-700">
                     Receipt
@@ -370,6 +373,11 @@ export default function TransactionHistoryPage() {
                       {/* Amount */}
                       <TableCell className="text-right font-bold font-mono text-base text-emerald-600">
                         +₹{txn.amount.toLocaleString("en-IN")}
+                      </TableCell>
+
+                      {/* Discount */}
+                      <TableCell className="text-right font-bold font-mono text-base text-slate-600">
+                        ₹{txn.discount ? txn.discount.toLocaleString("en-IN") : "0"}
                       </TableCell>
 
                       {/* Receipt */}

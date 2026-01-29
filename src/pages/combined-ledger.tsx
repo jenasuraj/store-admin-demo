@@ -69,6 +69,8 @@ interface PaymentEntry {
   paymentMode: string;
   description: string;
   amount: number;
+  discount: number | null,
+  isDiscountApplied: null | boolean,
   imgUrl: string;
   createdAt: string;
 }
@@ -438,6 +440,7 @@ export default function LedgerReportPage() {
                         <span className="font-bold text-green-700">
                           {pay.amount.toLocaleString("en-IN")}
                         </span>
+                        
                       </div>
                     ))}
                   </div>

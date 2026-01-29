@@ -80,6 +80,8 @@ interface PaymentEntry {
   amount: number;
   imgUrl: string;
   createdAt: string;
+  discount?: number;
+  isDiscountApplied?: boolean;
 }
 
 interface MonthData {
@@ -316,12 +318,18 @@ export default function ExportLedgerButton() {
       finalY = doc.lastAutoTable.finalY;
 
       if (monthData.stats.paymentHistory && monthData.stats.paymentHistory.length > 0) {
-        const paymentRows = monthData.stats.paymentHistory.map((p) => [
-          format(new Date(p.paymentDate), "dd/MM/yyyy"),
-          `Payment Received (${p.paymentMode})`,
-          "", "", "", "", "", "", "", "",
-          p.amount.toLocaleString("en-IN"),
-        ]);
+        const paymentRows = monthData.stats.paymentHistory.map((p) => {
+          const amountText = p.isDiscountApplied && p.discount
+            ? `(${p.discount.toLocaleString("en-IN")} Off) ${p.amount.toLocaleString("en-IN")}`
+            : p.amount.toLocaleString("en-IN");
+          
+          return [
+            format(new Date(p.paymentDate), "dd/MM/yyyy"),
+            `Payment Received (${p.paymentMode})`,
+            "", "", "", "", "", "", "", "",
+            amountText,
+          ];
+        });
 
         autoTable(doc, {
           startY: finalY,
@@ -407,11 +415,15 @@ export default function ExportLedgerButton() {
       // Payment Rows
       if (monthData.stats.paymentHistory && monthData.stats.paymentHistory.length > 0) {
         monthData.stats.paymentHistory.forEach((p) => {
+          const amountText = p.isDiscountApplied && p.discount
+            ? `(₹${p.discount} Off) ${p.amount}`
+            : p.amount;
+          
           wsData.push([
             format(new Date(p.paymentDate), "dd/MM/yyyy"),
             `Payment Received (${p.paymentMode})`,
             "", "", "", "", "", "", "", "",
-            p.amount
+            amountText
           ]);
         });
       }

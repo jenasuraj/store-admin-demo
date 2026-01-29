@@ -58,6 +58,7 @@ import axios from "axios";
 import { BASE_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // --- Types ---
 
@@ -93,6 +94,7 @@ interface LedgerRowItem {
   quantity: number;
   extraCharge: number;
   amount: number;
+  payNow: boolean;
 
   location: string;
   imageUrl: string;
@@ -329,6 +331,7 @@ export default function CreateEntryPage() {
 
   // Form State
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+  const [payNowForAll, setPayNowForAll] = useState<boolean>(false);
   const [rows, setRows] = useState<LedgerRowItem[]>([]);
   const [priceList, setPriceList] = useState<CustomerPriceList | null>(null);
   const [isLoadingPriceList, setIsLoadingPriceList] = useState(false);
@@ -363,6 +366,7 @@ export default function CreateEntryPage() {
     quantity: 1,
     extraCharge: 0,
     amount: 0,
+    payNow: false,
     location: "",
     imageUrl: "",
   });
@@ -564,6 +568,7 @@ export default function CreateEntryPage() {
           basePrice,
           ratePerPiece: basePrice * sqft,
           amount: basePrice * sqft * row.quantity + row.extraCharge,
+          payNow: false,
         };
         // Ensure totalSqft is calculated
         newRow.totalSqft = sqft * row.quantity;
@@ -708,6 +713,7 @@ export default function CreateEntryPage() {
     const payload = {
       customerId: parseInt(selectedCustomerId),
       paymentStatus: "PENDING",
+      payNowForAll: false,
       totalAmount: validRows.reduce((sum, r) => sum + r.amount, 0),
       items: validRows.map((r) => ({
         date: r.date,
@@ -723,6 +729,7 @@ export default function CreateEntryPage() {
         imageUrl: r.imageUrl || "",
         extraCharge: r.extraCharge,
         amount: r.amount,
+        payNow: payNowForAll ? true : r.payNow,
       })),
     };
 
@@ -804,6 +811,9 @@ export default function CreateEntryPage() {
                     <TableHead className="min-w-[100px] text-right">
                       Amount
                     </TableHead>
+                    <TableHead className="min-w-[100px] text-right">
+                      Paid
+                    </TableHead>
                     <TableHead className="min-w-[80px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -829,7 +839,7 @@ export default function CreateEntryPage() {
                         <div
                           className={cn(
                             !selectedCustomerId &&
-                              "pointer-events-none touch-none",
+                            "pointer-events-none touch-none",
                             "flex flex-col gap-1"
                           )}
                         >
@@ -1056,6 +1066,16 @@ export default function CreateEntryPage() {
                           {row.amount.toFixed(0)}
                         </div>
                       </TableCell>
+                      <TableCell className="flex justify-end">
+                        <Checkbox
+                          className="mr-4"
+                          checked={payNowForAll ? true : row.payNow}
+                          disabled={row.productId === 0}
+                          onCheckedChange={(checked) =>
+                            updateRow(row.internalId, "payNow", checked)
+                          }
+                        />
+                      </TableCell>
 
                       <TableCell>
                         <div className="flex gap-1">
@@ -1087,13 +1107,22 @@ export default function CreateEntryPage() {
                 </TableBody>
               </Table>
             </div>
-            <div className="p-4 bg-muted/20 border-t flex justify-end items-center gap-4">
+            <div className="p-4 bg-muted/20 border-t flex flex-col justify-center items-end gap-4">
               <div className="text-xl font-bold">
                 Grand Total:{" "}
                 <span className="text-primary">
                   ₹{grandTotal.toLocaleString("en-IN")}
                 </span>
               </div>
+              <span className="flex gap-2 flex-row">
+                <Checkbox id="payNowForAll"
+                  checked={payNowForAll}
+                  onCheckedChange={(checked) => setPayNowForAll(checked as boolean)}
+                />
+                  <Label htmlFor="payNowForAll">
+                    Fully Paid
+                  </Label>
+              </span>
             </div>
           </CardContent>
         </Card>

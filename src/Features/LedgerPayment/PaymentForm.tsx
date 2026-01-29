@@ -23,12 +23,12 @@ import {
   CommandList
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { 
-  Calendar as CalendarIcon, 
-  Check, 
-  ChevronsUpDown, 
-  Upload, 
-  Loader2, 
+import {
+  Calendar as CalendarIcon,
+  Check,
+  ChevronsUpDown,
+  Upload,
+  Loader2,
   MapPin,
   Phone,
   Trash2,
@@ -59,6 +59,7 @@ interface LedgerSummaryItem {
   totalAmount: number;
   paidAmount: number;
   pendingAmount: number;
+  discountAmount?: number;
   status: "PENDING" | "PAID" | "PARTIAL";
   entries: number;
 }
@@ -68,6 +69,7 @@ interface LedgerStats {
   totalPaidAmount: number;
   totalPendingAmount: number;
   totalEntries: number;
+  discountAmount?: number;
 }
 
 // --- Zod Schema ---
@@ -76,6 +78,9 @@ const paymentSchema = z.object({
   amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
     message: "Amount must be a positive number",
   }),
+  discount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, {
+    message: "Discount amount must be a positive number",
+  }).optional(),
   paymentMode: z.enum(["CASH", "UPI", "BANK", "CHEQUE"]),
   date: z.date({ required_error: "Date is required" }),
   description: z.string().optional(),
@@ -112,14 +117,14 @@ function CircularProgress({ value }: { value: number }) {
   );
 }
 
-function CustomerCombobox({ 
-  customers, 
-  value, 
-  onChange 
-}: { 
-  customers: any[], 
-  value: string, 
-  onChange: (id: string) => void 
+function CustomerCombobox({
+  customers,
+  value,
+  onChange
+}: {
+  customers: any[],
+  value: string,
+  onChange: (id: string) => void
 }) {
   const [open, setOpen] = useState(false);
   const selectedCustomer = customers.find(c => (c.id || c.customerId).toString() === value);
@@ -144,8 +149,8 @@ function CustomerCombobox({
             <CommandEmpty>No customer found.</CommandEmpty>
             <CommandGroup>
               {customers.map((customer) => {
-                 const id = (customer.id || customer.customerId).toString();
-                 return (
+                const id = (customer.id || customer.customerId).toString();
+                return (
                   <CommandItem
                     key={id}
                     value={`${customer.firstname} ${customer.lastname || ''}`}
@@ -176,21 +181,22 @@ export default function PaymentPage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { customers } = useAppSelector((state) => state.customer);
-  
+
   // React Hook Form
-  const { 
-    register, 
-    handleSubmit, 
-    setValue, 
-    watch, 
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
     control,
     reset,
-    formState: { errors, isSubmitting: isFormSubmitting } 
+    formState: { errors, isSubmitting: isFormSubmitting }
   } = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
       customerId: "",
       amount: "",
+      discount: "",
       paymentMode: "CASH",
       date: new Date(),
       description: ""
@@ -202,13 +208,13 @@ export default function PaymentPage() {
   // --- Data States ---
   const [summaryList, setSummaryList] = useState<LedgerSummaryItem[]>([]);
   const [stats, setStats] = useState<LedgerStats | null>(null);
-  
+
   // Pagination State
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
+
   // Infinite Scroll Hook
   const { ref, inView } = useInView();
 
@@ -241,7 +247,7 @@ export default function PaymentPage() {
       const res = await axios.get(`${BASE_URL}/api/payments/ledgerSummary/${custId}`, {
         params: { page: pageNum, size: 20, sort: 'month,desc' }
       });
-      
+
       const content = res.data.summary?.content || [];
       const isLast = res.data.summary?.last ?? true;
 
@@ -283,7 +289,7 @@ export default function PaymentPage() {
 
   // 3. Refresh Handler
   const handleRefresh = async () => {
-    if(!selectedCustomerId) return;
+    if (!selectedCustomerId) return;
     setIsRefreshing(true);
     setPage(0);
     // Parallel fetch
@@ -318,7 +324,7 @@ export default function PaymentPage() {
   const uploadPaymentProofWithProgress = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
-    
+
     // Using Axios to track upload progress
     const response = await axios.post(`${BASE_URL}/api/user/upload?folder=payments`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -329,7 +335,7 @@ export default function PaymentPage() {
         }
       }
     });
-    return response.data.url; 
+    return response.data.url;
   };
 
   // --- Form Submission ---
@@ -338,7 +344,7 @@ export default function PaymentPage() {
     setIsUploading(true);
     try {
       let imageUrl = "";
-      
+
       if (imageFile) {
         try {
           imageUrl = await uploadPaymentProofWithProgress(imageFile);
@@ -351,6 +357,7 @@ export default function PaymentPage() {
 
       const payload = {
         amount: parseFloat(data.amount),
+        discount: data.discount ? parseFloat(data.discount) : 0,
         paymentMode: data.paymentMode,
         description: data.description || "",
         imgUrl: imageUrl,
@@ -358,14 +365,15 @@ export default function PaymentPage() {
       };
 
       await axios.post(`${BASE_URL}/api/payments/${data.customerId}/payments`, payload);
-      
+
       toast.success(`Payment of ₹${payload.amount} recorded!`);
-      
+
       // Cleanup
       removeImage();
       reset({
         customerId: data.customerId, // Keep customer selected
         amount: "",
+        discount: "",
         paymentMode: "CASH",
         date: new Date(),
         description: ""
@@ -392,13 +400,14 @@ export default function PaymentPage() {
     monthlyStats: summaryList,
     totalDue: stats.totalLedgerAmount,
     totalPaid: stats.totalPaidAmount,
-    remaining: stats.totalPendingAmount
+    remaining: stats.totalPendingAmount,
+    discount: stats.discountAmount || 0
   } : null;
 
   return (
     <main className="min-h-screen bg-gray-50/50 font-sans p-4">
       <div className="mx-auto space-y-6">
-        
+
         {/* --- Header Section --- */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -412,39 +421,39 @@ export default function PaymentPage() {
               Process payments and settle customer balances
             </p>
           </div>
-          
+
           <div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRefresh} 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
               disabled={!selectedCustomerId || isRefreshing}
               className="gap-2 bg-white"
             >
-              <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} /> 
+              <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
               {isRefreshing ? "Refreshing..." : "Refresh Balance"}
             </Button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+
           {/* --- LEFT COLUMN (Customer & Month Summary) --- */}
           <div className="lg:col-span-2 space-y-6 flex flex-col min-h-[calc(100vh)]">
-            
+
             {/* Customer Selector Card */}
             <Card className="shadow-sm  flex-shrink-0">
               <CardContent className="p-6">
                 <div className="flex flex-col gap-6">
-                  
+
                   <div className="flex justify-between items-start">
                     <div className="space-y-1 w-full max-w-sm">
                       <Label className="text-xs text-muted-foreground uppercase tracking-wider">Select Customer</Label>
-                      <Controller 
+                      <Controller
                         name="customerId"
                         control={control}
                         render={({ field }) => (
-                          <CustomerCombobox 
+                          <CustomerCombobox
                             customers={customers}
                             value={field.value}
                             onChange={field.onChange}
@@ -453,7 +462,7 @@ export default function PaymentPage() {
                       />
                       {errors.customerId && <span className="text-xs text-red-500">{errors.customerId.message}</span>}
                     </div>
-                    
+
                     {selectedCustomerId && stats && (
                       <div className="text-right hidden sm:block">
                         <p className="text-xs text-muted-foreground">Total Pending</p>
@@ -485,7 +494,7 @@ export default function PaymentPage() {
                     </>
                   )}
                 </div>
-                
+
               </CardContent>
             </Card>
 
@@ -498,7 +507,7 @@ export default function PaymentPage() {
                 </CardTitle>
                 <CardDescription>Breakdown of entries, billed amount and pending dues per month.</CardDescription>
               </CardHeader>
-              
+
               <CardContent className="p-0 flex flex-col flex-grow overflow-hidden relative">
                 {selectedCustomerId ? (
                   <div className="flex flex-col min-h-full">
@@ -511,6 +520,7 @@ export default function PaymentPage() {
                             <th className="px-6 py-3 font-medium text-center bg-gray-50">Entries</th>
                             <th className="px-6 py-3 font-medium text-right bg-gray-50">Total Billed</th>
                             <th className="px-6 py-3 font-medium text-right bg-gray-50">Paid</th>
+                            <th className="px-6 py-3 font-medium text-right bg-gray-50">Discount</th>
                             <th className="px-6 py-3 font-medium text-right bg-gray-50">Pending</th>
                           </tr>
                         </thead>
@@ -527,6 +537,7 @@ export default function PaymentPage() {
                               </td>
                               <td className="px-6 py-4 text-right font-medium">₹{stat.totalAmount.toLocaleString()}</td>
                               <td className="px-6 py-4 text-right text-green-600">₹{stat.paidAmount.toLocaleString()}</td>
+                              <td className="px-6 py-4 text-right text-blue-600">₹{stat.discountAmount.toLocaleString()}</td>
                               <td className="px-6 py-4 text-right">
                                 {stat.pendingAmount !== 0 ? (
                                   <span className={cn("font-bold", stat.pendingAmount > 0 ? "text-red-600" : "text-green-600")}>
@@ -540,11 +551,11 @@ export default function PaymentPage() {
                           ))}
                           {/* Sentinel for Infinite Scroll */}
                           {hasMore && (
-                             <tr ref={ref}>
-                               <td colSpan={5} className="py-4 text-center text-muted-foreground">
-                                 <Loader2 className="h-4 w-4 animate-spin mx-auto" />
-                               </td>
-                             </tr>
+                            <tr ref={ref}>
+                              <td colSpan={5} className="py-4 text-center text-muted-foreground">
+                                <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                              </td>
+                            </tr>
                           )}
                         </tbody>
                       </table>
@@ -553,19 +564,19 @@ export default function PaymentPage() {
                     {/* Sticky Footer (Stats Row) */}
                     {stats && (
                       <div className="bg-gray-900 text-white z-20 flex-shrink-0">
-                         <table className="w-full text-sm text-left">
-                           <tfoot>
-                              <tr>
-                                <td className="px-6 py-3 font-medium w-[25%]">Grand Total</td>
-                                <td className="px-6 py-3 text-center font-medium w-[15%]">
-                                  {stats.totalEntries}
-                                </td>
-                                <td className="px-6 py-3 text-right font-bold w-[20%]">₹{stats.totalLedgerAmount.toLocaleString()}</td>
-                                <td className="px-6 py-3 text-right font-bold text-green-400 w-[20%]">₹{stats.totalPaidAmount.toLocaleString()}</td>
-                                <td className="px-6 py-3 text-right font-bold text-red-400 w-[20%]">₹{stats.totalPendingAmount.toLocaleString()}</td>
-                              </tr>
-                           </tfoot>
-                         </table>
+                        <table className="w-full text-sm text-left">
+                          <tfoot>
+                            <tr>
+                              <td className="px-6 py-3 font-medium w-[25%]">Grand Total</td>
+                              <td className="px-6 py-3 text-center font-medium w-[15%]">
+                                {stats.totalEntries}
+                              </td>
+                              <td className="px-6 py-3 text-right font-bold w-[20%]">₹{stats.totalLedgerAmount.toLocaleString()}</td>
+                              <td className="px-6 py-3 text-right font-bold text-green-400 w-[20%]">₹{stats.totalPaidAmount.toLocaleString()}</td>
+                              <td className="px-6 py-3 text-right font-bold text-red-400 w-[20%]">₹{stats.totalPendingAmount.toLocaleString()}</td>
+                            </tr>
+                          </tfoot>
+                        </table>
                       </div>
                     )}
                   </div>
@@ -582,7 +593,7 @@ export default function PaymentPage() {
 
           {/* --- RIGHT COLUMN (Payment Form) --- */}
           <div className="lg:col-span-1 space-y-6">
-            
+
             <Card className="shadow-md overflow-hidden h-fit flex flex-col sticky top-4">
               <CardHeader className="bg-gray-50/50 border-b pb-4">
                 <div className="flex justify-between items-center">
@@ -592,25 +603,25 @@ export default function PaymentPage() {
                   </div>
                 </div>
               </CardHeader>
-              
+
               <CardContent className="p-6 flex-1 space-y-6">
-            
+
                 {/* Financial Summary Box */}
-                 <div className="space-y-2 bg-gray-50 p-4 rounded-lg border border-dashed">
-                   <div className="flex justify-between text-sm">
-                     <span>Total Due</span>
-                     <span className="font-medium">₹{stats?.totalLedgerAmount.toLocaleString() || '0'}</span>
-                   </div>
-                   <div className="flex justify-between text-sm">
-                     <span>Paid</span>
-                     <span className="font-medium text-green-600">-₹{stats?.totalPaidAmount.toLocaleString() || '0'}</span>
-                   </div>
-                   <Separator />
-                   <div className="flex justify-between text-base font-bold">
-                     <span>Outstanding</span>
-                     <span className="text-red-600">₹{stats?.totalPendingAmount.toLocaleString() || '0'}</span>
-                   </div>
-                 </div>
+                <div className="space-y-2 bg-gray-50 p-4 rounded-lg border border-dashed">
+                  <div className="flex justify-between text-sm">
+                    <span>Total Due</span>
+                    <span className="font-medium">₹{stats?.totalLedgerAmount.toLocaleString() || '0'}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Paid</span>
+                    <span className="font-medium text-green-600">-₹{stats?.totalPaidAmount.toLocaleString() || '0'}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between text-base font-bold">
+                    <span>Outstanding</span>
+                    <span className="text-red-600">₹{stats?.totalPendingAmount.toLocaleString() || '0'}</span>
+                  </div>
+                </div>
 
                 {/* Inputs */}
                 <form id="payment-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -629,11 +640,11 @@ export default function PaymentPage() {
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar 
-                                mode="single" 
-                                selected={field.value} 
-                                onSelect={field.onChange} 
-                                initialFocus 
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                initialFocus
                                 disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                               />
                             </PopoverContent>
@@ -664,23 +675,37 @@ export default function PaymentPage() {
                       />
                     </div>
                   </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-xs">Paying Amount (₹)</Label>
-                    <Input 
-                      max={stats?.totalPendingAmount}
-                      type="number" 
-                      className="font-bold text-lg h-10 border-blue-200 focus-visible:ring-blue-500" 
-                      placeholder="0.00"
-                      {...register("amount")}
-                    />
-                    {errors.amount && <p className="text-xs text-red-500">{errors.amount.message}</p>}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Paying Amount (₹)</Label>
+                      <Input
+                        max={stats?.totalPendingAmount}
+                        step={"any"}
+                        type="number"
+                        className="font-bold text-lg h-10 border-blue-200 focus-visible:ring-blue-500"
+                        placeholder="0.00"
+                        {...register("amount")}
+                      />
+                      {errors.amount && <p className="text-xs text-red-500">{errors.amount.message}</p>}
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Discount Amount (₹)</Label>
+                      <Input
+                        step={"any"}
+                        max={stats?.totalPendingAmount && stats.totalPendingAmount - (Number(watch('amount')) || 0)}
+                        type="number"
+                        className="font-bold text-lg h-10 border-blue-200 focus-visible:ring-blue-500"
+                        placeholder="0.00"
+                        {...register("discount")}
+                      />
+                      {errors.discount && <p className="text-xs text-red-500">{errors.discount.message}</p>}
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Description</Label>
-                    <Textarea 
-                      className="resize-none h-16 text-xs" 
-                      placeholder="Transaction ID / Notes..." 
+                    <Textarea
+                      className="resize-none h-16 text-xs"
+                      placeholder="Transaction ID / Notes..."
                       {...register("description")}
                     />
                   </div>
@@ -690,10 +715,10 @@ export default function PaymentPage() {
                 <div className="space-y-2">
                   <Label className="text-xs">Upload Receipt (Max 10MB)</Label>
                   {isUploading ? (
-                     <div className="border-2 border-dashed border-blue-200 bg-blue-50 rounded-lg p-6 flex flex-col items-center justify-center gap-3">
-                        <CircularProgress value={uploadProgress} />
-                        <span className="text-xs font-medium text-blue-700">Uploading... {uploadProgress}%</span>
-                     </div>
+                    <div className="border-2 border-dashed border-blue-200 bg-blue-50 rounded-lg p-6 flex flex-col items-center justify-center gap-3">
+                      <CircularProgress value={uploadProgress} />
+                      <span className="text-xs font-medium text-blue-700">Uploading... {uploadProgress}%</span>
+                    </div>
                   ) : imagePreview ? (
                     <div className="border-2 border-dashed border-green-200 bg-green-50 rounded-lg p-6 flex flex-col items-center justify-center gap-3 text-center animate-in fade-in zoom-in duration-300">
                       <div className="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center shadow-sm">
@@ -708,8 +733,8 @@ export default function PaymentPage() {
                       </Button>
                     </div>
                   ) : (
-                    <Label 
-                      htmlFor="receipt-upload" 
+                    <Label
+                      htmlFor="receipt-upload"
                       className="border-2 border-dashed border-gray-200 hover:border-gray-400 hover:bg-gray-50 rounded-lg p-8 flex flex-col items-center justify-center gap-2 text-center cursor-pointer transition-all duration-200"
                     >
                       <div className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center">
@@ -717,10 +742,10 @@ export default function PaymentPage() {
                       </div>
                       <span className="text-sm font-medium text-gray-700">Click to upload receipt</span>
                       <span className="text-xs text-gray-400">JPG, PNG up to 10MB</span>
-                      <Input 
-                        id="receipt-upload" 
-                        type="file" 
-                        className="hidden" 
+                      <Input
+                        id="receipt-upload"
+                        type="file"
+                        className="hidden"
                         accept="image/*"
                         onChange={handleFileSelect}
                       />
@@ -731,10 +756,10 @@ export default function PaymentPage() {
               </CardContent>
 
               <CardFooter className="p-6 pt-0">
-                <Button 
+                <Button
                   form="payment-form"
                   type="submit"
-                  className="w-full bg-gray-900 hover:bg-gray-800 text-white shadow-lg h-11 text-sm font-medium" 
+                  className="w-full bg-gray-900 hover:bg-gray-800 text-white shadow-lg h-11 text-sm font-medium"
                   disabled={isFormSubmitting || isUploading || !selectedCustomerId}
                 >
                   {(isFormSubmitting || isUploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

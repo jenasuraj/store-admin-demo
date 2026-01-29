@@ -8,9 +8,11 @@ export interface Transaction {
   paymentMode: "CASH" | "UPI" | "BANK_TRANSFER" | "CHEQUE";
   description: string;
   imgUrl: string;
-  date: string; 
+  date: string;
   customerName: string;
   customerId: number;
+  discount: number | null;
+  isDiscountApplied: boolean | null;
 }
 
 interface TransactionState {
@@ -30,9 +32,9 @@ interface TransactionState {
 const initialState: TransactionState = {
   transactions: [],
   loading: false,
-  filterCustomerId: '',
-  filterStartDate: '',
-  filterEndDate: '',
+  filterCustomerId: "",
+  filterStartDate: "",
+  filterEndDate: "",
   currentPage: 0,
   pageSize: 10,
   totalPages: 0,
@@ -45,19 +47,19 @@ export const fetchTransactions = createAsyncThunk(
   "transactions/fetch",
   async (_, { getState, rejectWithValue }) => {
     const state = getState() as { transaction: TransactionState };
-    const { 
-      filterCustomerId, 
-      filterStartDate, 
-      filterEndDate, 
-      currentPage, 
-      pageSize 
+    const {
+      filterCustomerId,
+      filterStartDate,
+      filterEndDate,
+      currentPage,
+      pageSize,
     } = state.transaction;
 
     try {
       // Determine which endpoint to use based on filters
       const hasFilters = filterCustomerId || filterStartDate || filterEndDate;
-      const endpoint = hasFilters 
-        ? `${BASE_URL}/api/payments/filter?sortField=id&direction=desc` 
+      const endpoint = hasFilters
+        ? `${BASE_URL}/api/payments/filter?sortField=id&direction=desc`
         : `${BASE_URL}/api/payments/ledgerPayments?sortField=id&direction=desc`;
 
       // Build Query Params
@@ -75,27 +77,39 @@ export const fetchTransactions = createAsyncThunk(
       const response = await axios.get(endpoint, { params });
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data || "Failed to fetch transactions");
+      return rejectWithValue(
+        error.response?.data || "Failed to fetch transactions",
+      );
     }
-  }
+  },
 );
 
 const transactionSlice = createSlice({
   name: "transaction",
   initialState,
   reducers: {
-    setTransactionFilters: (state, action: PayloadAction<{ customerId?: string; startDate?: string; endDate?: string }>) => {
-      if (action.payload.customerId !== undefined) state.filterCustomerId = action.payload.customerId;
-      if (action.payload.startDate !== undefined) state.filterStartDate = action.payload.startDate;
-      if (action.payload.endDate !== undefined) state.filterEndDate = action.payload.endDate;
-      
+    setTransactionFilters: (
+      state,
+      action: PayloadAction<{
+        customerId?: string;
+        startDate?: string;
+        endDate?: string;
+      }>,
+    ) => {
+      if (action.payload.customerId !== undefined)
+        state.filterCustomerId = action.payload.customerId;
+      if (action.payload.startDate !== undefined)
+        state.filterStartDate = action.payload.startDate;
+      if (action.payload.endDate !== undefined)
+        state.filterEndDate = action.payload.endDate;
+
       // Reset to page 0 when filters change
       state.currentPage = 0;
     },
     resetTransactionFilters: (state) => {
-      state.filterCustomerId = '';
-      state.filterStartDate = '';
-      state.filterEndDate = '';
+      state.filterCustomerId = "";
+      state.filterStartDate = "";
+      state.filterEndDate = "";
       state.currentPage = 0;
     },
     setPage: (state, action: PayloadAction<number>) => {
@@ -104,7 +118,7 @@ const transactionSlice = createSlice({
     setPageSize: (state, action: PayloadAction<number>) => {
       state.pageSize = action.payload;
       state.currentPage = 0; // Reset to first page on size change
-    }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -127,11 +141,11 @@ const transactionSlice = createSlice({
   },
 });
 
-export const { 
-  setTransactionFilters, 
-  resetTransactionFilters, 
-  setPage, 
-  setPageSize 
+export const {
+  setTransactionFilters,
+  resetTransactionFilters,
+  setPage,
+  setPageSize,
 } = transactionSlice.actions;
 
 export default transactionSlice.reducer;
