@@ -79,7 +79,7 @@ interface CustomerPriceList {
 interface LedgerRowItem {
   internalId: string;
   date: string;
-  productId: number; // 0 if not selected
+  productId: number;
   productName: string;
   defaultSku: string;
 
@@ -90,16 +90,19 @@ interface LedgerRowItem {
 
   basePrice: number;
   ratePerPiece: number;
-
   quantity: number;
+
   extraCharge: number;
   amount: number;
-  payNow: boolean;
 
+  isAutoAmount: boolean;
+
+  payNow: boolean;
   location: string;
   imageUrl: string;
   isUploading?: boolean;
 }
+
 
 interface DraftData {
   selectedCustomerId: string;
@@ -151,6 +154,8 @@ function RowProductCombobox({
   onLoadMore: (node: HTMLDivElement) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const hasAutoOpenedRef = useRef(false);
+
 
   // Find selected item name for display
   const selectedItemName =
@@ -167,6 +172,35 @@ function RowProductCombobox({
             "w-full justify-between text-left font-normal h-8 text-xs px-2",
             !selectedProductId && "text-muted-foreground"
           )}
+          onKeyDown={(e) => {
+            // ✅ Open ONLY ONCE per focus
+            if (
+              e.key === "Tab" &&
+              !open &&
+              !hasAutoOpenedRef.current &&
+              !e.shiftKey
+            ) {
+              e.preventDefault();
+              e.stopPropagation();
+
+              hasAutoOpenedRef.current = true; // 🔒 lock auto-open
+              setOpen(true);
+              return;
+            }
+
+            // Enter opens normally (optional)
+            if (e.key === "Enter" && !open) {
+              e.preventDefault();
+              setOpen(true);
+            }
+
+            // Esc closes
+            if (e.key === "Escape" && open) {
+              e.preventDefault();
+              setOpen(false);
+            }
+          }}
+
         >
           <span className="truncate">{selectedItemName}</span>
           <ChevronsUpDownIcon className="ml-2 h-3 w-3 shrink-0 opacity-50" />
@@ -351,9 +385,9 @@ export default function CreateEntryPage() {
   const [draftToRestore, setDraftToRestore] = useState<DraftData | null>(null);
 
   // Helper to create an empty row
-  const createEmptyRow = (): LedgerRowItem => ({
+  const createEmptyRow = (date?: string): LedgerRowItem => ({
     internalId: Math.random().toString(36).substr(2, 9),
-    date: format(new Date(), "yyyy-MM-dd"),
+    date: date || format(new Date(), "yyyy-MM-dd"),
     productId: 0,
     productName: "",
     defaultSku: "",
@@ -366,6 +400,7 @@ export default function CreateEntryPage() {
     quantity: 1,
     extraCharge: 0,
     amount: 0,
+    isAutoAmount: true,
     payNow: false,
     location: "",
     imageUrl: "",
@@ -548,9 +583,15 @@ export default function CreateEntryPage() {
       priceListMap[product.productId] ?? product.attributes?.[0]?.price ?? 0;
 
     // Default dimensions
-    const width = 1,
-      height = 1,
-      sqft = 1;
+    // ✅ SAFE dimension extraction
+    const width = Number(product.attributes?.[0]?.width ?? 0);
+    const height = Number(product.attributes?.[0]?.height ?? 0);
+
+    // sqft only if both exist
+    const sqft =
+      width > 0 && height > 0
+        ? parseFloat((width * height).toFixed(2))
+        : 0;
 
     setRows((prev) => {
       const updatedRows = prev.map((row) => {
@@ -580,7 +621,7 @@ export default function CreateEntryPage() {
         (r) => r.internalId === internalId
       );
       if (currentIndex === updatedRows.length - 1) {
-        updatedRows.push(createEmptyRow());
+        updatedRows.push(createEmptyRow(updatedRows[currentIndex].date));
       }
 
       return updatedRows;
@@ -591,6 +632,7 @@ export default function CreateEntryPage() {
     const newRow = {
       ...row,
       internalId: Math.random().toString(36).substr(2, 9),
+      date: row.date,
     };
     setRows((prev) => {
       // Insert duplicate after current row or at end? Typically at end.
@@ -617,43 +659,45 @@ export default function CreateEntryPage() {
     setRows((prev) =>
       prev.map((row) => {
         if (row.internalId !== internalId) return row;
+
         const updated = { ...row, [field]: value };
 
-        // Calculations
-        if (
-          [
-            "width",
-            "height",
-            "sqft",
-            "basePrice",
-            "ratePerPiece",
-            "quantity",
-            "extraCharge",
-          ].includes(field)
-        ) {
-          if (field === "width" || field === "height") {
-            updated.sqft = parseFloat(
-              (updated.width * updated.height).toFixed(2)
-            );
-          }
-          if (["width", "height", "sqft", "basePrice"].includes(field)) {
-            updated.ratePerPiece = parseFloat(
-              (updated.sqft * updated.basePrice).toFixed(2)
-            );
-          }
-          updated.amount = parseFloat(
-            (
-              updated.ratePerPiece * updated.quantity +
-              updated.extraCharge
-            ).toFixed(2)
+        /* 1️⃣ Recalculate SQFT */
+        if (field === "width" || field === "height") {
+          updated.sqft = parseFloat(
+            (updated.width * updated.height).toFixed(2)
           );
         }
-        // Always recalculate totalSqft unless the field being updated is totalSqft itself (to allow manual override)
+
+        /* 2️⃣ Recalculate ratePerPiece */
+        if (
+          ["width", "height", "sqft", "basePrice"].includes(field)
+        ) {
+          updated.ratePerPiece = parseFloat(
+            (updated.sqft * updated.basePrice).toFixed(2)
+          );
+        }
+
+        /* 3️⃣ Total Sqft */
         if (field !== "totalSqft") {
           updated.totalSqft = parseFloat(
             (updated.sqft * updated.quantity).toFixed(2)
           );
         }
+
+        /* 4️⃣ Amount Logic */
+
+        // If auto mode is ON → calculate
+        if (updated.isAutoAmount && field !== "amount") {
+          updated.amount = parseFloat(
+            (
+              updated.ratePerPiece *
+              updated.quantity +
+              updated.extraCharge
+            ).toFixed(2)
+          );
+        }
+
         return updated;
       })
     );
@@ -732,7 +776,6 @@ export default function CreateEntryPage() {
         payNow: payNowForAll ? true : r.payNow,
       })),
     };
-
     try {
       const res = await axios.post(`${BASE_URL}/api/ledger/create`, payload);
       if (res.status === 200 || res.status === 201) {
@@ -796,14 +839,15 @@ export default function CreateEntryPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
+                    <TableHead className="w-[130px]"></TableHead>
                     <TableHead className="w-[130px]">Date</TableHead>
                     <TableHead className="min-w-[250px]">Product</TableHead>
-                    <TableHead className="min-w-[100px]">Location</TableHead>
+                    <TableHead className="min-w-[100px]">Description</TableHead>
                     <TableHead className="min-w-[80px]">Width</TableHead>
                     <TableHead className="min-w-[80px]">Height</TableHead>
                     <TableHead className="min-w-[80px]">SqFt</TableHead>
-                    <TableHead className="min-w-[80px]">Rate</TableHead>
-                    <TableHead className="min-w-[80px]">1pc Rate</TableHead>
+                    <TableHead className="min-w-[80px]">Rate per SqFt</TableHead>
+                    <TableHead className="min-w-[80px]">Total Rate</TableHead>
                     <TableHead className="min-w-[80px]">Qty</TableHead>
                     <TableHead className="min-w-[80px]">Total Sqft</TableHead>
                     <TableHead className="min-w-[100px]">Extra</TableHead>
@@ -823,6 +867,14 @@ export default function CreateEntryPage() {
                       key={row.internalId}
                       className={cn(row.productId === 0 && "bg-muted/5")}
                     >
+                      <TableCell>
+                        <Checkbox
+                          checked={row.isAutoAmount}
+                          onCheckedChange={(checked) =>
+                            updateRow(row.internalId, "isAutoAmount", Boolean(checked))
+                          }
+                        />
+                      </TableCell>
                       <TableCell>
                         <Input
                           type="date"
@@ -931,52 +983,61 @@ export default function CreateEntryPage() {
                         />
                       </TableCell>
                       <TableCell>
-                        <Input
-                          type="number"
-                          min={0}
-                          className="h-8 px-1"
-                          value={row.basePrice}
-                          disabled={row.productId === 0}
-                          onChange={(e) =>
-                            updateRow(
-                              row.internalId,
-                              "basePrice",
-                              parseFloat(e.target.value) || 0
-                            )
-                          }
-                        />
+                        <span className="flex items-center gap-1">
+                          <Input
+                            type="number"
+                            min={0}
+                            className="h-8 px-1"
+                            value={row.basePrice}
+                            disabled={row.productId === 0}
+                            onChange={(e) =>
+                              updateRow(
+                                row.internalId,
+                                "basePrice",
+                                parseFloat(e.target.value) || 0
+                              )
+                            }
+
+                          />
+                        </span>
                       </TableCell>
                       <TableCell>
-                        <Input
-                          type="number"
-                          min={0}
-                          className="h-8 px-1 font-medium text-blue-600"
-                          value={row.ratePerPiece}
-                          disabled={row.productId === 0}
-                          onChange={(e) =>
-                            updateRow(
-                              row.internalId,
-                              "ratePerPiece",
-                              parseFloat(e.target.value) || 0
-                            )
-                          }
-                        />
+                        <span className="flex items-center gap-1">
+
+                          <Input
+                            type="number"
+                            min={0}
+                            className="h-8 px-1 font-medium text-blue-600"
+                            value={row.ratePerPiece}
+                            disabled={row.productId === 0}
+                            onChange={(e) =>
+                              updateRow(
+                                row.internalId,
+                                "ratePerPiece",
+                                parseFloat(e.target.value) || 0
+                              )
+                            }
+                          />
+                        </span>
                       </TableCell>
                       <TableCell>
-                        <Input
-                          type="number"
-                          className="h-8 px-1"
-                          min={0}
-                          value={row.quantity}
-                          disabled={row.productId === 0}
-                          onChange={(e) =>
-                            updateRow(
-                              row.internalId,
-                              "quantity",
-                              parseFloat(e.target.value) || 0
-                            )
-                          }
-                        />
+                        <span className="flex items-center gap-1">
+
+                          <Input
+                            type="number"
+                            className="h-8 px-1"
+                            min={0}
+                            value={row.quantity}
+                            disabled={row.productId === 0}
+                            onChange={(e) =>
+                              updateRow(
+                                row.internalId,
+                                "quantity",
+                                parseFloat(e.target.value) || 0
+                              )
+                            }
+                          />
+                        </span>
                       </TableCell>
                       <TableCell>
                         <Input
@@ -1062,8 +1123,23 @@ export default function CreateEntryPage() {
                       </TableCell>
 
                       <TableCell>
-                        <div className="text-right font-bold text-sm">
-                          {row.amount.toFixed(0)}
+                        <div className="text-right font-bold text-sm flex items-center justify-end gap-2">
+
+
+                          {/* {row.amount.toFixed(0)} */}
+                          <Input
+                            type="number"
+                            className="h-8 px-1 font-bold text-sm text-primary"
+                            value={row.amount}
+                            onChange={(e) =>
+                              updateRow(
+                                row.internalId,
+                                "amount",
+                                parseFloat(e.target.value) || 0
+                              )
+                            }
+                          />
+
                         </div>
                       </TableCell>
                       <TableCell className="flex justify-end">
@@ -1119,9 +1195,9 @@ export default function CreateEntryPage() {
                   checked={payNowForAll}
                   onCheckedChange={(checked) => setPayNowForAll(checked as boolean)}
                 />
-                  <Label htmlFor="payNowForAll">
-                    Fully Paid
-                  </Label>
+                <Label htmlFor="payNowForAll">
+                  Fully Paid
+                </Label>
               </span>
             </div>
           </CardContent>

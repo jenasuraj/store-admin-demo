@@ -6,10 +6,10 @@
 
 // const BASE_URL = "https://store-admin-uat.actifyzone.com/store-uat";
 
-const BASE_URL = '/STORE-ADMIN-API'
+// const BASE_URL = '/STORE-ADMIN-API'
 
 // const BASE_URL = "/ECOM-ADMIN-PROD";
-//  const BASE_URL = "/ecom-admin-uat" ;
+ const BASE_URL = "/ecom-admin-uat" ;
 
 // const BASE_URL = ''
 
