@@ -2,11 +2,11 @@
 // const BASE_URL = "https://store-admin.actifyzone.com/STORE-ADMIN-API";
 // const BASE_URL = "http://100.91.162.54:8080";
 
-const BASE_URL = '/store-uat'
+// const BASE_URL = '/store-uat'
 
 // const BASE_URL = "https://store-admin-uat.actifyzone.com/store-uat";
 
-// const BASE_URL = '/STORE-ADMIN-API'
+const BASE_URL = '/STORE-ADMIN-API'
 
 //  const BASE_URL = "/ecom-admin-uat" ;
 
