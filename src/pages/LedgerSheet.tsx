@@ -385,7 +385,7 @@ export default function LedgerSheetPage() {
                     Product
                   </TableHead>
                   <TableHead className="w-[100px] text-xs font-bold text-slate-700 text-center">
-                    Location
+                    Description
                   </TableHead>
                   <TableHead className="w-[120px] text-xs font-bold text-slate-700 text-center">
                     Size (WxH)

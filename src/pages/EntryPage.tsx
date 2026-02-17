@@ -78,6 +78,10 @@ interface CustomerPriceList {
 
 interface LedgerRowItem {
   internalId: string;
+
+  customerId: string;
+  customerName: string;
+
   date: string;
   productId: number;
   productName: string;
@@ -105,7 +109,6 @@ interface LedgerRowItem {
 
 
 interface DraftData {
-  selectedCustomerId: string;
   rows: LedgerRowItem[];
   savedAt: number;
 }
@@ -135,6 +138,7 @@ const deleteImageAPI = async (imageUrl: string) => {
 function RowProductCombobox({
   items,
   selectedProductId,
+  selectedProductName,
   onSelect,
   priceListMap,
   searchTerm,
@@ -145,6 +149,7 @@ function RowProductCombobox({
 }: {
   items: ledgerProductsDataType[];
   selectedProductId: number;
+  selectedProductName: string;
   onSelect: (product: ledgerProductsDataType) => void;
   priceListMap: Record<number, number>;
   searchTerm: string;
@@ -159,8 +164,9 @@ function RowProductCombobox({
 
   // Find selected item name for display
   const selectedItemName =
-    items.find((i) => i.productId === selectedProductId)?.name ||
-    (selectedProductId !== 0 ? "Product Selected" : "Select Product...");
+    selectedProductId !== 0
+      ? selectedProductName
+      : "Select Product...";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -237,6 +243,7 @@ function RowProductCombobox({
                     value={item.name}
                     onSelect={() => {
                       onSelect(item);
+                      setSearchTerm("");
                       setOpen(false);
                     }}
                   >
@@ -249,7 +256,7 @@ function RowProductCombobox({
                       />
                       <div className="flex flex-col flex-1">
                         <span className="flex items-center gap-2 font-medium">
-                          {item.attributes[0].title}
+                          {item.attributes?.[0]?.title || item.name}
                           {isSpecial && (
                             <Badge
                               variant="secondary"
@@ -295,6 +302,7 @@ function CustomerCombobox({
   onSelect: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const hasAutoOpenedRef = useRef(false);
   const selectedCustomer = customers.find(
     (c) => (c.id || c.customerId).toString() === selectedCustomerId
   );
@@ -307,6 +315,34 @@ function CustomerCombobox({
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between"
+          onKeyDown={(e) => {
+            // ✅ Open ONLY ONCE per focus
+            if (
+              e.key === "Tab" &&
+              !open &&
+              !hasAutoOpenedRef.current &&
+              !e.shiftKey
+            ) {
+              e.preventDefault();
+              e.stopPropagation();
+
+              hasAutoOpenedRef.current = true; // 🔒 lock auto-open
+              setOpen(true);
+              return;
+            }
+
+            // Enter opens normally (optional)
+            if (e.key === "Enter" && !open) {
+              e.preventDefault();
+              setOpen(true);
+            }
+
+            // Esc closes
+            if (e.key === "Escape" && open) {
+              e.preventDefault();
+              setOpen(false);
+            }
+          }}
         >
           {selectedCustomer
             ? `${selectedCustomer.firstname} ${selectedCustomer.lastname || ""}`
@@ -364,7 +400,7 @@ export default function CreateEntryPage() {
   } = useAppSelector((state) => state.ledgerProducts);
 
   // Form State
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+  // const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
   const [payNowForAll, setPayNowForAll] = useState<boolean>(false);
   const [rows, setRows] = useState<LedgerRowItem[]>([]);
   const [priceList, setPriceList] = useState<CustomerPriceList | null>(null);
@@ -387,6 +423,10 @@ export default function CreateEntryPage() {
   // Helper to create an empty row
   const createEmptyRow = (date?: string): LedgerRowItem => ({
     internalId: Math.random().toString(36).substr(2, 9),
+
+    customerId: "",
+    customerName: "",
+
     date: date || format(new Date(), "yyyy-MM-dd"),
     productId: 0,
     productName: "",
@@ -412,7 +452,7 @@ export default function CreateEntryPage() {
     if (savedDraft) {
       try {
         const parsed = JSON.parse(savedDraft) as DraftData;
-        if (parsed.selectedCustomerId || parsed.rows.length > 0) {
+        if (parsed.rows.length > 0) {
           setDraftToRestore(parsed);
           setShowRestoreDialog(true);
         }
@@ -432,18 +472,19 @@ export default function CreateEntryPage() {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       // Only warn if we have a customer or rows with data
       const hasData = rows.some((r) => r.productId !== 0);
-      if (selectedCustomerId || hasData) {
+      const hasCustomer = rows.some(r => r.customerId !== "")
+      if (hasCustomer || hasData) {
         e.preventDefault();
         e.returnValue = "";
       }
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [selectedCustomerId, rows]);
+  }, [rows]);
 
   // --- 3. Internal Navigation Blocking ---
   const isDirty =
-    selectedCustomerId !== "" || rows.some((r) => r.productId !== 0);
+    rows.some(r => r.customerId !== "" || r.productId !== 0);
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       isDirty && currentLocation.pathname !== nextLocation.pathname
@@ -459,7 +500,6 @@ export default function CreateEntryPage() {
 
   const handleSaveDraft = () => {
     const draftData: DraftData = {
-      selectedCustomerId,
       rows,
       savedAt: Date.now(),
     };
@@ -479,7 +519,6 @@ export default function CreateEntryPage() {
       await Promise.all(deletePromises).catch((e) => console.error(e));
     }
 
-    setSelectedCustomerId("");
     setRows([createEmptyRow()]);
     if (blocker.state === "blocked") blocker.proceed();
     setShowSaveDraftDialog(false);
@@ -492,7 +531,6 @@ export default function CreateEntryPage() {
 
   const handleRestoreDraft = () => {
     if (draftToRestore) {
-      setSelectedCustomerId(draftToRestore.selectedCustomerId);
       setRows(draftToRestore.rows);
       toast.success("Draft restored");
     }
@@ -508,31 +546,32 @@ export default function CreateEntryPage() {
   };
 
   // --- Fetch Price List ---
-  useEffect(() => {
-    if (!selectedCustomerId) {
-      setPriceList(null);
-      return;
-    }
-    const fetchPriceList = async () => {
-      setIsLoadingPriceList(true);
-      try {
-        const response = await axios.get(
-          `${BASE_URL}/api/pricelist/${selectedCustomerId}`
-        );
-        if (Array.isArray(response.data) && response.data.length > 0) {
-          setPriceList(response.data[0]);
-          toast.success(`Applied: ${response.data[0].name}`);
-        } else {
-          setPriceList(null);
-        }
-      } catch (error) {
-        setPriceList(null);
-      } finally {
-        setIsLoadingPriceList(false);
-      }
-    };
-    fetchPriceList();
-  }, [selectedCustomerId]);
+  // useEffect(() => {
+  //   if (!selectedCustomerId) {
+  //     setPriceList(null);
+  //     return;
+  //   }
+  //   setSearchTerm(""); // Clear product search on customer change
+  //   const fetchPriceList = async () => {
+  //     setIsLoadingPriceList(true);
+  //     try {
+  //       const response = await axios.get(
+  //         `${BASE_URL}/api/pricelist/${selectedCustomerId}`
+  //       );
+  //       if (Array.isArray(response.data) && response.data.length > 0) {
+  //         setPriceList(response.data[0]);
+  //         toast.success(`Applied: ${response.data[0].name}`);
+  //       } else {
+  //         setPriceList(null);
+  //       }
+  //     } catch (error) {
+  //       setPriceList(null);
+  //     } finally {
+  //       setIsLoadingPriceList(false);
+  //     }
+  //   };
+  //   fetchPriceList();
+  // }, [selectedCustomerId]);
 
   const priceListMap = useMemo(() => {
     const map: Record<number, number> = {};
@@ -601,7 +640,7 @@ export default function CreateEntryPage() {
         const newRow = {
           ...row,
           productId: product.productId,
-          productName: product.name,
+          productName: product.attributes?.[0]?.title || product.name,
           defaultSku: product.defaultSku,
           width,
           height,
@@ -744,7 +783,7 @@ export default function CreateEntryPage() {
 
   // --- Submit ---
   const handleSubmit = async () => {
-    if (!selectedCustomerId) return toast.error("Select a customer");
+    // if (!selectedCustomerId) return toast.error("Select a customer");
 
     // Filter out rows that have no product selected
     const validRows = rows.filter((r) => r.productId !== 0);
@@ -755,12 +794,13 @@ export default function CreateEntryPage() {
     setIsSubmitting(true);
 
     const payload = {
-      customerId: parseInt(selectedCustomerId),
+      // customerId: parseInt(selectedCustomerId),
       paymentStatus: "PENDING",
       payNowForAll: false,
       totalAmount: validRows.reduce((sum, r) => sum + r.amount, 0),
       items: validRows.map((r) => ({
         date: r.date,
+        customerId: parseInt(r.customerId),
         productId: r.productId,
         height: r.height,
         width: r.width,
@@ -781,7 +821,7 @@ export default function CreateEntryPage() {
       if (res.status === 200 || res.status === 201) {
         toast.success("Ledger entry created!");
         localStorage.removeItem("ledger_draft");
-        setSelectedCustomerId("");
+        // setSelectedCustomerId("");
         setRows([createEmptyRow()]); // Reset to initial state
         // setTimeout(() => navigate("/ledger-sheet"), 1000);
       }
@@ -793,10 +833,9 @@ export default function CreateEntryPage() {
   };
 
   const grandTotal = rows.reduce((sum, r) => sum + r.amount, 0);
-  const grandTotalSqft = rows.reduce((sum, r) => sum + r.totalSqft, 0);
 
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
+    <main className="min-h-screen bg-background">
       <div className="max-w-[1600px] mx-auto space-y-6">
         <div className="flex items-center gap-4">
           <div>
@@ -807,7 +846,7 @@ export default function CreateEntryPage() {
           </div>
         </div>
 
-        <Card>
+        {/* <Card>
           <CardContent className="p-6 grid gap-6 items-end">
             <div className="flex flex-col gap-2 max-w-md">
               <Label>Customer</Label>
@@ -817,9 +856,8 @@ export default function CreateEntryPage() {
                 onSelect={setSelectedCustomerId}
               />
             </div>
-            {/* Removed the MultiSelectCombobox from here */}
           </CardContent>
-        </Card>
+        </Card> */}
 
         {isLoadingPriceList ? (
           <div className="text-sm text-muted-foreground flex items-center gap-2">
@@ -841,6 +879,7 @@ export default function CreateEntryPage() {
                   <TableRow className="bg-muted/50">
                     <TableHead className="w-[130px]"></TableHead>
                     <TableHead className="w-[130px]">Date</TableHead>
+                    <TableHead className="min-w-[200px]">Customer</TableHead>
                     <TableHead className="min-w-[250px]">Product</TableHead>
                     <TableHead className="min-w-[100px]">Description</TableHead>
                     <TableHead className="min-w-[80px]">Width</TableHead>
@@ -875,6 +914,8 @@ export default function CreateEntryPage() {
                           }
                         />
                       </TableCell>
+
+
                       <TableCell>
                         <Input
                           type="date"
@@ -885,12 +926,33 @@ export default function CreateEntryPage() {
                           }
                         />
                       </TableCell>
+                      <TableCell>
+                        <CustomerCombobox
+                          customers={customers}
+                          selectedCustomerId={row.customerId}
+                          onSelect={(id) => {
+                            const customer = customers.find(
+                              (c) => (c.id || c.customerId).toString() === id
+                            );
+
+                            updateRow(row.internalId, "customerId", id);
+                            updateRow(
+                              row.internalId,
+                              "customerName",
+                              customer
+                                ? `${customer.firstname}`
+                                : ""
+                            );
+                            setSearchTerm("");
+                          }}
+                        />
+                      </TableCell>
 
                       <TableCell>
                         {/* New Row-Based Product Combobox */}
                         <div
                           className={cn(
-                            !selectedCustomerId &&
+                            !row.customerId &&
                             "pointer-events-none touch-none",
                             "flex flex-col gap-1"
                           )}
@@ -898,6 +960,7 @@ export default function CreateEntryPage() {
                           <RowProductCombobox
                             items={products}
                             selectedProductId={row.productId}
+                            selectedProductName={row.productName}
                             onSelect={(p) =>
                               handleRowProductSelect(row.internalId, p)
                             }
@@ -1217,7 +1280,6 @@ export default function CreateEntryPage() {
             onClick={handleSubmit}
             disabled={
               isSubmitting ||
-              !selectedCustomerId ||
               rows.filter((r) => r.productId !== 0).length === 0
             }
           >
