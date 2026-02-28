@@ -1,4 +1,4 @@
-"use client"
+
 
 import { Crown, UserCheck, UserPlus, Users } from "lucide-react"
 

@@ -1,4 +1,4 @@
-"use client";
+;
 
 import { useRef, useState } from "react";
 import { PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
