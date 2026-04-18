@@ -4,6 +4,7 @@ import {
   Reducer,
   UnknownAction,
 } from "@reduxjs/toolkit";
+import clientsReducer from "./ClientSlice"
 import userSlice from "./AuthSlice";
 import categorySlice from "../Features/Masters/Category/categorySlice";
 import ProductTypeSlice from "../Features/Masters/ProductType/productTypeSlice";
@@ -52,6 +53,7 @@ const reducers = {
   ledgerProducts: ledgerProductsSlice,
   ledgerSheet: ledgerSheetSlice,
   transaction:transactionSlice,
+  clients:clientsReducer,
 };
 
 const rootReducer = combineReducers(reducers);

@@ -4,7 +4,7 @@
 
 const BASE_URL = '/store-uat'
 
-// const BASE_URL = "https://store-admin-uat.actifyzone.com/store-uat";
+//const BASE_URL = "https://store-admin-uat.actifyzone.com/store-uat";
 
 // const BASE_URL = '/STORE-ADMIN-API'
 

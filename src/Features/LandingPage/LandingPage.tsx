@@ -311,7 +311,7 @@ export default function LandingPage() {
                   {/* <TabsTrigger value="menu">Menu</TabsTrigger> */}
                   <TabsTrigger value="gallery">Gallery</TabsTrigger>
                   <TabsTrigger value="contact">Contact</TabsTrigger>
-                  <TabsTrigger value="footer">Footer</TabsTrigger>
+                  <TabsTrigger value="footer">Footer</TabsTrigger> 
                 </TabsList>
 
                 <TabsContent value="basic" className="space-y-6">
