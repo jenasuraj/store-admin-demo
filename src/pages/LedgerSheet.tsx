@@ -366,7 +366,7 @@ export default function LedgerSheetPage() {
       header: "Rate/SQFt",
     },
     {
-      accessorFn: (row) => row.sqFt * row.basePrice,
+      accessorFn: (row) => Number(row.sqFt) * Number(row.basePrice),
       header: "Total Rate",
     },
     {

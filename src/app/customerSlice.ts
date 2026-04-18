@@ -11,6 +11,10 @@ export interface Customer {
   aadharCard: string;
   createdAt?: string;
   localAddress?: string;
+  height: string;
+  width: string;
+  basePrice: string;
+  sqFt: string;
   customerId?: string;
 }
 

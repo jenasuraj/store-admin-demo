@@ -226,7 +226,7 @@ export default function PaymentPage() {
 
   // --- Init ---
   useEffect(() => {
-    dispatch(fetchCustomers());
+    dispatch(fetchCustomers({search: ""}));
   }, [dispatch]);
 
   // --- API Functions ---

@@ -171,7 +171,7 @@ const PriceListForm = forwardRef<HTMLDivElement, PriceListFormProps>(
         form.setValue("name", initialData.name);
         form.setValue("userId", initialData.userid);
       } else {
-        dispatch(fetchCustomers());
+        dispatch(fetchCustomers({search: ""}));
       }
     }, [initialData, form, dispatch]);
 

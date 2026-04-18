@@ -192,7 +192,7 @@ export default function LedgerReportPage() {
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchCustomers());
+    dispatch(fetchCustomers({ search: "" }));
   }, [dispatch]);
 
   const handleFetchReport = async () => {
