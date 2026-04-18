@@ -16,7 +16,134 @@ import MobilePreview from "./MobilePreview"
 import ImageUploadModal from "../Products/Components/ImageUploadModal"
 import { BASE_URL } from "@/lib/constants"
 import axios from "axios"
-// Define the Zod schema for validation
+import DynamicForm from "../template-manager/DynamicForm"
+
+
+interface Template {
+  id: number;
+  name: string;
+  description: string;
+  templateJson: Array<{
+    tabs: Record<string, any>;
+  }>;
+  imgPreview: string | null;
+}
+
+// Transformed template structure that DynamicForm expects
+interface TransformedTemplate {
+  id: number;
+  name: string;
+  description: string;
+  tabs: Record<string, any>;
+}
+
+const LandingPage = () => {
+  const [rawTemplates, setRawTemplates] = useState<Template[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<TransformedTemplate | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchAll = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(BASE_URL + '/api/template/assigned');
+      console.log('Raw response:', response.data);
+      const rawData = Array.isArray(response.data) ? response.data : [response.data];
+      setRawTemplates(rawData);
+      const transformed = transformTemplateData(response.data);
+      if (transformed.length > 0) {
+        setSelectedTemplate(transformed[0]);
+      }
+      
+    } catch (error) {
+      console.error('Failed to fetch templates', error);
+      toast.error('Failed to fetch templates');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Transform the API response to match DynamicForm's expected structure
+  const transformTemplateData = (apiData: any): TransformedTemplate[] => {
+    // Handle single template object
+    if (apiData && !Array.isArray(apiData)) {
+      const templateJson = apiData.templateJson || [];
+      const tabs = templateJson[0]?.tabs || {};
+      
+      return [{
+        id: apiData.id,
+        name: apiData.templateName,
+        description: apiData.description || '',
+        tabs: tabs
+      }];
+    }
+    
+    // Handle array of templates
+    if (Array.isArray(apiData)) {
+      return apiData.map(item => {
+        const templateJson = item.templateJson || [];
+        const tabs = templateJson[0]?.tabs || {};
+        
+        return {
+          id: item.id,
+          name: item.templateName,
+          description: item.description || '',
+          tabs: tabs
+        };
+      });
+    }
+    
+    return [];
+  };
+
+  useEffect(() => {
+    fetchAll();
+  }, []);
+
+
+
+  if (loading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading templates...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen w-full p-6">
+      {selectedTemplate ? (
+        <div className="space-y-4">
+          {/* Template Name Header */}
+          <div className=" p-4">
+            <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {selectedTemplate.name + " " + "Template"} 
+                </h1>
+            </div>
+          </div>
+          
+          {/* Dynamic Form */}
+          <DynamicForm template={selectedTemplate} />
+        </div>
+      ) : (
+        <div className="flex items-center justify-center h-full">
+          <p className="text-gray-600">No templates available</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default LandingPage;
+
+
+
+
+
+/**
 const categorySchema = z.object({
   id: z.number(),
   name: z.string().min(1, "Category name is required"),
@@ -282,7 +409,6 @@ export default function LandingPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
          
-        {/* Admin Panel - Left Side */}
         <div className="flex-1 p-4 max-w-4xl">
           <div className="flex justify-between items-center mb-6">
             <div>
@@ -308,7 +434,7 @@ export default function LandingPage() {
                 <TabsList className="grid w-full grid-cols-6">
                   <TabsTrigger value="basic">Basic Info</TabsTrigger>
                   <TabsTrigger value="hero">Hero Section</TabsTrigger>
-                  {/* <TabsTrigger value="menu">Menu</TabsTrigger> */}
+  
                   <TabsTrigger value="gallery">Gallery</TabsTrigger>
                   <TabsTrigger value="contact">Contact</TabsTrigger>
                   <TabsTrigger value="footer">Footer</TabsTrigger> 
@@ -386,7 +512,7 @@ export default function LandingPage() {
             <FormLabel>Hero Image/GIF URL</FormLabel>
             <div className="flex gap-2">
               <FormControl>
-                {/* <Input placeholder="Enter image or GIF URL" {...field} /> */}
+             
               </FormControl>
               <Button
                 type="button"
@@ -415,13 +541,13 @@ export default function LandingPage() {
       />
       
       
-      {/* Hidden fields for the rest of the hero image object */}
+     
       <FormField
         control={form.control}
         name="heroImage.status"
         render={({ field }) => (
           <FormControl>
-            {/* <Input type="hidden" {...field} /> */}
+           
           </FormControl>
         )}
       />
@@ -495,7 +621,7 @@ export default function LandingPage() {
                       ))}
                     </CardContent>
                   </Card>
-                </TabsContent> */}
+                </TabsContent> 
 
                 <TabsContent value="gallery" className="space-y-6">
                   <Card>
@@ -770,7 +896,7 @@ export default function LandingPage() {
           </Form>
         </div>
 
-        {/* Mobile Preview - Right Side */}
+   
         <div className="w-96 bg-gray-100 p-4 sticky top-0 h-screen overflow-y-auto">
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Live Preview</h2>
@@ -797,4 +923,4 @@ export default function LandingPage() {
     />
     </div>
   )
-}
+} */
