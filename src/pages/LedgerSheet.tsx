@@ -785,8 +785,8 @@ export default function LedgerSheetPage() {
                   variant="ghost"
                   className="w-full text-red-600 hover:bg-red-50"
                   onClick={() => {
-                    setLocalStartDate("");
-                    setLocalEndDate("");
+                    setLocalStartDate(undefined);
+                    setLocalEndDate(undefined);
                     setLocalCustomerId("");
                     dispatch(resetFilters());
                     dispatch(fetchLedgerEntries());

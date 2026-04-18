@@ -232,14 +232,22 @@ const customerSlice = createSlice({
 
       const { type, data } = action.payload;
 
-      const normalized = (Array.isArray(data) ? data : []).map((c: any) => ({
-        id: (c.id || c.customerId)?.toString(),
-        customerId: c.customerId,
-        firstname: c.firstname,
-        number: c.number,
-        address: c.address,
-        aadharCard: c.aadharCard,
-      }));
+      const normalized: Customer[] = (Array.isArray(data) ? data : []).map(
+        (c: any) => ({
+          id: (c.id || c.customerId || "")?.toString(),
+          customerId: c.customerId?.toString(),
+          firstname: c.firstname ?? "",
+          number: c.number ?? "",
+          address: c.address ?? "",
+          aadharCard: c.aadharCard ?? "",
+          height: c.height ?? "",
+          width: c.width ?? "",
+          basePrice: c.basePrice ?? "",
+          sqFt: c.sqFt ?? "",
+          createdAt: c.createdAt,
+          localAddress: c.localAddress,
+        }),
+      );
 
       state.customers = normalized;
     });

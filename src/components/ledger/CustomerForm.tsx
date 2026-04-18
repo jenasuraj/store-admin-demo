@@ -385,6 +385,10 @@ function CreateCustomerForm({
         number: data.number,
         address: data.address,
         aadharCard: uploadedAadharUrl || data.aadharCard || "",
+        height: "",
+        width: "",
+        basePrice: "",
+        sqFt: ""
       })
     );
 
