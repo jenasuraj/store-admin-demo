@@ -402,7 +402,7 @@ export default function ProductList() {
       <Tabs value={status} onValueChange={handleTabChange} defaultValue="active">
         <TabsList>
           <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="draft">Draft</TabsTrigger>
+          {/* <TabsTrigger value="draft">Draft</TabsTrigger> */}
         </TabsList>
 
         <TabsContent value={status}>
