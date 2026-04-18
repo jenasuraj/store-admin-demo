@@ -24,6 +24,19 @@ import Form from "./Features/template-manager/Form";
 import TemplateManager from "./Features/template-manager/TemplateManager";
 
 
+import OracleLoginPage from "./Features/bot-poc/auth/OracleLogin";
+import PennantLoginPage from "./Features/bot-poc/auth/PennantLogin";
+import FinnacleLoginPage from "./Features/bot-poc/auth/FinnacleLogin";
+// import PennantHomePage from "./Features/Home/PennantHome";
+// import OracleHomePage from "./Features/Home/OracleHome";
+// import FinnacleHomePage from "./Features/Home/FinnacleHome";
+import UploadPage from "./Features/Home/autobot-home";
+import AutoBotLoginPage from "./Features/bot-poc/auth/autobot-login";
+import SystemDashboard from "./Features/bot-poc/home/SystemDashboard";
+import TaxInvoiceForm from "./Features/bot-poc/invoice/TaxInvoiceForm";
+import CreateTransactionScreen from "./Features/bot-poc/transactions/transaction-entry";
+import BankLoginPage from "./Features/bot-poc/auth/bank-login";
+import AutobotNewHomePage from "./Features/Home/autobot-home-new";
 
 axios.interceptors.request.use(
   function (config) {
@@ -140,11 +153,63 @@ function App() {
           path: "/ledger/payments",
           element: <LedgerPaymentsPage />,
         },
+        {
+          path: "/oracle-home",
+          element: <SystemDashboard />,
+        },
+        {
+          path: "/pennant-home",
+          element: <SystemDashboard />,
+        },
+        {
+          path: "/finnacle-home",
+          element: <SystemDashboard />,
+        },
+        {
+          path: "/bank-home",
+          element: <SystemDashboard />,
+        },
+        {
+          path: "/autobot-home",
+          element: <UploadPage />,
+        },
+        {
+          path: "/autobot-new-home",
+          element: <AutobotNewHomePage />,
+        },
+        {
+          path: "/transaction-entry",
+          element: <CreateTransactionScreen />,
+        },
+        {
+          path: "/invoice-home",
+          element: <TaxInvoiceForm />,
+        },
       ],
     },
     {
       path: "/login",
       element: <LoginPage />,
+    },
+    {
+      path: "/oracle-login",
+      element: <OracleLoginPage />,
+    },
+    {
+      path: "/pennant-login",
+      element: <PennantLoginPage />,
+    },
+    {
+      path: "/finnacle-login",
+      element: <FinnacleLoginPage />,
+    },
+    {
+      path: "/autobot-login",
+      element: <AutoBotLoginPage />,
+    },
+    {
+      path: "/bank-login",
+      element: <BankLoginPage />,
     },
   ]);
 
