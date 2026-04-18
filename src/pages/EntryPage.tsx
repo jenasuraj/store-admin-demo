@@ -301,11 +301,21 @@ function CustomerCombobox({
   selectedCustomerId: string;
   onSelect: (id: string) => void;
 }) {
+  const dispatch = useAppDispatch();
+  const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const hasAutoOpenedRef = useRef(false);
   const selectedCustomer = customers.find(
-    (c) => (c.id || c.customerId).toString() === selectedCustomerId
+    (c) => c.id === selectedCustomerId
   );
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      dispatch(fetchCustomers({ search }));
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [search, dispatch]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -352,7 +362,11 @@ function CustomerCombobox({
       </PopoverTrigger>
       <PopoverContent className="w-[300px] sm:w-[400px] p-0">
         <Command>
-          <CommandInput placeholder="Search customer..." />
+          <CommandInput
+            placeholder="Search customer..."
+            value={search}
+            onValueChange={setSearch}
+          />
           <CommandList>
             <CommandEmpty>No customer found.</CommandEmpty>
             <CommandGroup>
@@ -851,6 +865,7 @@ export default function CreateEntryPage() {
             <div className="flex flex-col gap-2 max-w-md">
               <Label>Customer</Label>
               <CustomerCombobox
+              
                 customers={customers}
                 selectedCustomerId={selectedCustomerId}
                 onSelect={setSelectedCustomerId}
@@ -971,14 +986,6 @@ export default function CreateEntryPage() {
                             hasMore={hasMore}
                             onLoadMore={lastElementRef}
                           />
-                          {/* {row.productName && row.productId !== 0 && (
-                             <div className="text-[10px] text-muted-foreground px-2">
-                                SKU: {row.defaultSku} 
-                                {priceListMap[row.productId] !== undefined && (
-                                  <span className="text-green-600 ml-2 font-medium">Special Price</span>
-                                )}
-                             </div>
-                          )} */}
                         </div>
                       </TableCell>
 

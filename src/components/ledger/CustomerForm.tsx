@@ -23,6 +23,7 @@ import {
   resetCustomerState,
   fetchCustomers,
   updateCustomer,
+  Customer,
 } from "@/app/customerSlice";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -56,6 +57,8 @@ import {
 } from "@/components/ui/form";
 import { useBlocker, useBeforeUnload } from "react-router-dom";
 import { DialogTrigger } from "@radix-ui/react-dialog";
+import { ColumnDef } from "@tanstack/react-table";
+import ShadcnTable from "../shadcnTable/ShadcnTable";
 
 const customerSchema = z.object({
   firstname: z.string().min(1, "Name is required"),
@@ -70,6 +73,8 @@ const customerSchema = z.object({
 
 type CustomerFormValues = z.infer<typeof customerSchema>;
 
+
+
 export default function CustomerForm() {
   const dispatch = useAppDispatch();
   const { customers, loading } = useAppSelector((state) => state.customer);
@@ -77,24 +82,89 @@ export default function CustomerForm() {
   const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchCustomers());
+    dispatch(fetchCustomers({ search: "" }));
   }, [dispatch]);
 
   if (loading && customers.length === 0) {
     return <div className="text-center py-8">Loading customers...</div>;
   }
 
+  const columns: ColumnDef<Customer>[] = [
+    {
+      accessorKey: "firstname",
+      header: "Name",
+    },
+    {
+      accessorKey: "number",
+      header: "Mobile",
+    },
+    {
+      accessorKey: "address",
+      header: "Address",
+    },
+    {
+      accessorKey: "aadharCard",
+      header: "Aadhar",
+      id: "select",
+      cell: ({ row }) => {
+        return row.original.aadharCard ? (
+          <div className="relative w-10 h-10 rounded overflow-hidden group cursor-pointer">
+            <Dialog>
+              <DialogTrigger>
+                <img
+                  src={row.original.aadharCard}
+                  alt="Aadhar"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Eye className="w-4 h-4 text-white" />
+                </div>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl">
+                <DialogHeader>
+                  <DialogTitle>
+                    {" "}
+                    {row.original.firstname}'s Aadhar Card
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="w-full h-full">
+                  <img
+                    src={row.original.aadharCard}
+                    alt="Aadhar Full"
+                    className="w-full max-w-7xl max-h-[80vh] object-contain"
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        ) : (
+          <span className="text-muted-foreground text-xs">
+            No Image
+          </span>
+        )
+      }
+    },
+    {
+      header: "edit",
+      id: "expander",
+      cell: ({ row }) => {
+        return (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setEditingCustomer(row.original)}
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+        );
+      }
+    }
+  ]
+
+
   return (
     <>
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <div className="flex justify-start">
-            <Button onClick={() => setIsCreating(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Customer
-            </Button>
-          </div>
-
+      {/* 
           {customers.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">
               No customers added yet
@@ -170,9 +240,22 @@ export default function CustomerForm() {
                 </TableBody>
               </Table>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          )} */}
+      <ShadcnTable
+        title="Customer"
+        data={customers}
+        columns={columns}
+        error={false}
+        loading={loading}
+      >
+        <div className="flex justify-start">
+          <Button onClick={() => setIsCreating(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Customer
+          </Button>
+        </div>
+      </ShadcnTable>
+
 
       <Dialog
         modal={false}
@@ -307,7 +390,7 @@ function CreateCustomerForm({
 
     if (createCustomer.fulfilled.match(resultAction)) {
       dispatch(resetCustomerState());
-      dispatch(fetchCustomers());
+      dispatch(fetchCustomers({ search: "" }));
       onSuccess();
     }
   };
@@ -368,7 +451,7 @@ function CreateCustomerForm({
                   maxFiles={1}
                   disabled={isUploading}
                 >
-                    <DropzoneEmptyState />
+                  <DropzoneEmptyState />
                   <DropzoneContent />
                 </Dropzone>
                 {isUploading && (
@@ -562,7 +645,7 @@ function EditCustomerForm({
 
     if (updateCustomer.fulfilled.match(resultAction)) {
       dispatch(resetCustomerState());
-      dispatch(fetchCustomers());
+      dispatch(fetchCustomers({ search: "" }));
       onSuccess();
     }
   };

@@ -88,6 +88,7 @@ type ComponentProps<T extends object = any> = {
   title: string;
   children?: React.ReactNode;
   hideGlobalSearch?: boolean;
+  hideExcel?: boolean;
   loading: boolean;
   error: boolean | string | Error;
   onRowSelectionChange?: (selectedData: T[]) => void;
@@ -112,6 +113,7 @@ const ShadcnTable: React.FC<ComponentProps> = ({
   onRowSelectionChange,
   loading,
   error,
+  hideExcel,
 }) => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState<string>("");
@@ -207,7 +209,6 @@ const ShadcnTable: React.FC<ComponentProps> = ({
   if (loader || loading) {
     return <TableSkeleton />;
   }
-
   return (
     <Card>
       <CardHeader>
@@ -225,31 +226,43 @@ const ShadcnTable: React.FC<ComponentProps> = ({
           {/* Right-side actions */}
           <div className="flex flex-wrap md:flex-nowrap items-center justify-start gap-4">
             {/* Export Button */}
-            {/* <Button
-              variant="outline"
-              className="p-2"
-              onClick={() => {
-                const allRows = table
-                  .getCoreRowModel()
-                  .rows.map((row) => row.original);
-                const columns = table
-                  .getAllColumns()
-                  .filter((col) => col.id !== "expander")
-                  .filter((col) => col.id !== "select")
-                  .filter((col) => col.getIsVisible())
-                  .map((col) => ({
+            {hideExcel != true ? (
+              <Button
+                variant="outline"
+                className="p-2"
+                onClick={() => {
+                  const visibleColumns = table
+                    .getAllColumns()
+                    .filter((col) => col.id !== "expander")
+                    .filter((col) => col.getIsVisible());
+
+                  const visibleRows = table.getSortedRowModel().rows.map((row) => {
+                    const rowData: any = {};
+
+                    visibleColumns.forEach((col) => {
+                      try {
+                        rowData[col.id] = row.getValue(col.id); // ✅ IMPORTANT
+                      } catch {
+                        rowData[col.id] = "";
+                      }
+                    });
+
+                    return rowData;
+                  });
+
+                  const columns = visibleColumns.map((col) => ({
                     label: col.columnDef.header,
                     value: col.id,
                   }));
 
-                exportToExcel(columns, allRows, "dataSheet");
-              }}
-            >
-              <FaFileExcel
-                size={24}
-                className="text-[#00b400] dark:text-[#00ff00] cursor-pointer transition duration-75 ease-in hover:text-[#4bbd4b]"
-              />
-            </Button> */}
+                  exportToExcel(columns, visibleRows, "dataSheet");
+                }}
+              >
+                <FaFileExcel
+                  size={24}
+                  className="text-[#00b400] dark:text-[#00ff00] cursor-pointer transition duration-75 ease-in hover:text-[#4bbd4b]"
+                />
+              </Button>) : null}
 
             {/* Column Toggle Dropdown */}
             <DropdownMenu>
@@ -356,22 +369,22 @@ const ShadcnTable: React.FC<ComponentProps> = ({
                           isLastLeftPinned
                             ? "left"
                             : isFirstRightPinned
-                            ? "right"
-                            : undefined
+                              ? "right"
+                              : undefined
                         }
                         aria-sort={
                           header.column.getIsSorted() === "asc"
                             ? "ascending"
                             : header.column.getIsSorted() === "desc"
-                            ? "descending"
-                            : "none"
+                              ? "descending"
+                              : "none"
                         }
                       >
                         <div
                           className={cn(
                             "flex items-center justify-between gap-2",
                             header.column.getCanSort() &&
-                              "cursor-pointer select-none"
+                            "cursor-pointer select-none"
                           )}
                           onClick={() => {
                             if (api) {
@@ -412,15 +425,15 @@ const ShadcnTable: React.FC<ComponentProps> = ({
                               }
                             }
                           }}
-                          // tabIndex={header.column.getCanSort() ? 0 : undefined}
+                        // tabIndex={header.column.getCanSort() ? 0 : undefined}
                         >
                           <span className="truncate">
                             {header.isPlaceholder
                               ? null
                               : flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext()
-                                )}
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
                           </span>
                           <div className="flex items-start gap-2">
                             {api ? (
@@ -472,12 +485,10 @@ const ShadcnTable: React.FC<ComponentProps> = ({
                                     e.stopPropagation();
                                     header.column.pin(false);
                                   }}
-                                  aria-label={`Unpin ${
-                                    header.column.columnDef.header as string
-                                  } column`}
-                                  title={`Unpin ${
-                                    header.column.columnDef.header as string
-                                  } column`}
+                                  aria-label={`Unpin ${header.column.columnDef.header as string
+                                    } column`}
+                                  title={`Unpin ${header.column.columnDef.header as string
+                                    } column`}
                                 >
                                   <PinOff
                                     className="opacity-60"
@@ -494,12 +505,10 @@ const ShadcnTable: React.FC<ComponentProps> = ({
                                       variant="ghost"
                                       className="-mr-1 size-7 shadow-none"
                                       onClick={(e) => e.stopPropagation()}
-                                      aria-label={`Pin options for ${
-                                        header.column.columnDef.header as string
-                                      } column`}
-                                      title={`Pin options for ${
-                                        header.column.columnDef.header as string
-                                      } column`}
+                                      aria-label={`Pin options for ${header.column.columnDef.header as string
+                                        } column`}
+                                      title={`Pin options for ${header.column.columnDef.header as string
+                                        } column`}
                                     >
                                       <BsThreeDots
                                         className="opacity-60"
@@ -581,7 +590,7 @@ const ShadcnTable: React.FC<ComponentProps> = ({
             </TableHeader>
             <TableBody>
               {table.getRowModel().rows != undefined &&
-              table.getRowModel().rows?.length > 0 ? (
+                table.getRowModel().rows?.length > 0 ? (
                 table.getRowModel().rows?.map((row) => (
                   <Fragment key={row.id}>
                     <TableRow
@@ -600,17 +609,16 @@ const ShadcnTable: React.FC<ComponentProps> = ({
                         return (
                           <TableCell
                             key={cell.id}
-                            className={`truncate [&[data-pinned=left][data-last-col=left]]:border-r [&[data-pinned=right][data-last-col=right]]:border-l [&[data-pinned][data-last-col]]:border-border [&[data-pinned]]:bg-background/90 [&[data-pinned]]:backdrop-blur-sm ${
-                              cell.column.id == "expander" ? "w-10" : "w-full"
-                            }`}
+                            className={`truncate [&[data-pinned=left][data-last-col=left]]:border-r [&[data-pinned=right][data-last-col=right]]:border-l [&[data-pinned][data-last-col]]:border-border [&[data-pinned]]:bg-background/90 [&[data-pinned]]:backdrop-blur-sm ${cell.column.id == "expander" ? "w-2" : "w-full"
+                              }`}
                             style={{ ...getPinningStyles(column) }}
                             data-pinned={isPinned || undefined}
                             data-last-col={
                               isLastLeftPinned
                                 ? "left"
                                 : isFirstRightPinned
-                                ? "right"
-                                : undefined
+                                  ? "right"
+                                  : undefined
                             }
                           >
                             {flexRender(
@@ -622,7 +630,7 @@ const ShadcnTable: React.FC<ComponentProps> = ({
                       })}
                     </TableRow>
                     {row.getIsExpanded() && (
-                      <TableRow>
+                      <TableRow className="w-full">
                         <TableCell
                           colSpan={
                             row.getVisibleCells() &&
@@ -657,16 +665,16 @@ const ShadcnTable: React.FC<ComponentProps> = ({
             {api
               ? currentPage
               : table.getState().pagination.pageIndex *
-                  table.getState().pagination.pageSize +
-                1}{" "}
+              table.getState().pagination.pageSize +
+              1}{" "}
             to{" "}
             {api
               ? totalPages && totalPages - 1
               : Math.min(
-                  (table.getState().pagination.pageIndex + 1) *
-                    table.getState().pagination.pageSize,
-                  table.getFilteredRowModel().rows.length
-                )}{" "}
+                (table.getState().pagination.pageIndex + 1) *
+                table.getState().pagination.pageSize,
+                table.getFilteredRowModel().rows.length
+              )}{" "}
             of {api ? totalelement : table.getFilteredRowModel().rows.length}{" "}
             entries
           </div>

@@ -46,7 +46,7 @@ export const createCustomer = createAsyncThunk(
       toast.error("Failed to create customer");
       return thunkAPI.rejectWithValue(error.response?.data || error.message);
     }
-  }
+  },
 );
 
 export const uploadAadhar = createAsyncThunk(
@@ -69,7 +69,7 @@ export const uploadAadhar = createAsyncThunk(
               : 0;
             thunkAPI.dispatch(setUploadProgress(progress));
           },
-        }
+        },
       );
 
       if (response.status === 200) {
@@ -81,7 +81,7 @@ export const uploadAadhar = createAsyncThunk(
       toast.error("Failed to upload Aadhar");
       return thunkAPI.rejectWithValue(error.response?.data || error.message);
     }
-  }
+  },
 );
 
 export const deleteAadhar = createAsyncThunk(
@@ -89,7 +89,7 @@ export const deleteAadhar = createAsyncThunk(
   async (url: string, thunkAPI) => {
     try {
       const response = await axios.delete(
-        `${BASE_URL}/api/user/delete-blob?url=${url}`
+        `${BASE_URL}/api/user/delete-blob?url=${url}`,
       );
       if (response.status === 200) {
         toast.success("Aadhar deleted successfully");
@@ -100,14 +100,17 @@ export const deleteAadhar = createAsyncThunk(
       toast.error("Failed to delete Aadhar");
       return thunkAPI.rejectWithValue(error.response?.data || error.message);
     }
-  }
+  },
 );
 
 export const updateCustomer = createAsyncThunk(
   "customer/update",
   async ({ id, data }: { id: string; data: Partial<Customer> }, thunkAPI) => {
     try {
-      const response = await axios.put(`${BASE_URL}/api/user/update/${id}`, data);
+      const response = await axios.put(
+        `${BASE_URL}/api/user/update/${id}`,
+        data,
+      );
       if (response.status === 200) {
         toast.success("Customer updated successfully");
         return response.data;
@@ -117,19 +120,29 @@ export const updateCustomer = createAsyncThunk(
       toast.error("Failed to update customer");
       return thunkAPI.rejectWithValue(error.response?.data || error.message);
     }
-  }
+  },
 );
 
 export const fetchCustomers = createAsyncThunk(
-  "customer/fetchAll",
-  async (_, thunkAPI) => {
+  "customer/fetchMixed",
+  async ({ search = "" }: { search?: string }, thunkAPI) => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/user/list`); 
-      return response.data;
-    } catch (error: any) {
-        return [];
+      if (search.trim().length > 0) {
+        const encoded = encodeURIComponent(search.trim());
+
+        const res = await axios.get(
+          `${BASE_URL}/api/user/search?keyword=${encoded}`,
+        );
+
+        return { type: "search", data: res.data };
+      } else {
+        const res = await axios.get(`${BASE_URL}/api/user/list`);
+        return { type: "list", data: res.data };
+      }
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.response?.data || err.message);
     }
-  }
+  },
 );
 
 const customerSlice = createSlice({
@@ -204,10 +217,32 @@ const customerSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     });
-    
+
     // Fetch Customers
+    builder.addCase(fetchCustomers.pending, (state) => {
+      state.loading = true;
+    });
+
     builder.addCase(fetchCustomers.fulfilled, (state, action) => {
-        state.customers = action.payload;
+      state.loading = false;
+
+      const { type, data } = action.payload;
+
+      const normalized = (Array.isArray(data) ? data : []).map((c: any) => ({
+        id: (c.id || c.customerId)?.toString(),
+        customerId: c.customerId,
+        firstname: c.firstname,
+        number: c.number,
+        address: c.address,
+        aadharCard: c.aadharCard,
+      }));
+
+      state.customers = normalized;
+    });
+
+    builder.addCase(fetchCustomers.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
     });
   },
 });

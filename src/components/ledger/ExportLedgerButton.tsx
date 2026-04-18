@@ -55,6 +55,7 @@ import XLSX from "xlsx-js-style";
 interface LedgerEntry {
   id: number;
   productId: number;
+  description: string;
   productName: string;
   height: number;
   width: number;
@@ -251,6 +252,7 @@ export default function ExportLedgerButton() {
       const tableBody = monthData.entries.map((entry) => [
         format(new Date(entry.date), "dd-MMM-yyyy"),
         entry.productName,
+        entry.description,
         entry.height,
         entry.width,
         entry.sqFt,

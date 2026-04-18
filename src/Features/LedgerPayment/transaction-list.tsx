@@ -57,9 +57,25 @@ import {
   fetchTransactions,
   setTransactionFilters,
   resetTransactionFilters,
-  setPage, 
+  setPage,
+  Transaction,
 } from "@/app/transactionSlice";
 import { fetchCustomers } from "@/app/customerSlice";
+import { ColumnDef } from "@tanstack/react-table";
+import ShadcnTable from "@/components/shadcnTable/ShadcnTable";
+import { DatePicker } from "@/pages/LedgerSheet";
+
+// --- Helper for Payment Mode Icon ---
+const getPaymentIcon = (mode: string) => {
+  switch (mode) {
+    case "CASH":
+      return <Banknote className="h-4 w-4 text-green-600" />;
+    case "BANK_TRANSFER":
+      return <Landmark className="h-4 w-4 text-blue-600" />;
+    default:
+      return <CreditCard className="h-4 w-4 text-purple-600" />;
+  }
+};
 
 // --- Helper Component: Customer Filter ---
 function CustomerFilterCombobox({
@@ -137,10 +153,99 @@ function CustomerFilterCombobox({
   );
 }
 
-export default function TransactionHistoryPage() {
-  const navigate = useNavigate();
-  const dispatch = useAppDispatch();
 
+const column: ColumnDef<Transaction>[] = [
+  {
+    accessorFn: (row) => row.date,
+    header: "Date",
+    cell: ({ getValue }) => {
+      const date = getValue() as Date;
+      return format(date, "MMM dd, yyyy");
+    }
+  },
+  {
+    accessorFn: (row) => row.customerName,
+    header: "Customer",
+    cell: ({ row }) => {
+      const name = row.original.customerName;
+      const id = row.original.customerId;
+      return (
+        <div>
+          {name}
+          <div className="text-xs text-muted-foreground">ID: {id}</div>
+        </div>
+      );
+    }
+  },
+  {
+    accessorFn: (row) => row.paymentMode,
+    header: "Mode",
+    cell: ({ getValue }) => {
+      const mode = getValue() as string;
+      return <div className="flex justify-center">
+        <Badge
+          variant="outline"
+          className="font-medium flex items-center gap-1.5 bg-slate-50 px-3 py-1"
+        >
+          {getPaymentIcon(mode)}
+          <span className="capitalize">{mode?.toLowerCase().replace("_", " ")}</span>
+        </Badge>
+      </div>;
+    }
+  },
+  {
+    accessorFn: (row) => row.description,
+    header: "Description",
+  },
+  {
+    accessorFn: (row) => row.amount,
+    header: "Amount",
+    cell: ({ getValue }) => {
+      const amount = getValue() as number;
+      return (
+        <div className="text-right font-bold font-mono text-base text-emerald-600">
+          +₹{amount.toLocaleString("en-IN")}
+        </div>
+      );
+    }
+  },
+  {
+    accessorFn: (row) => row.discount,
+    header: "Discount",
+    cell: ({ getValue }) => {
+      const discount = getValue() as number | null;
+      return (
+        <div className="text-right font-bold font-mono text-base text-slate-600">
+          ₹{discount ? discount.toLocaleString("en-IN") : "0"}
+        </div>
+      );
+    }
+  },
+  {
+    accessorFn: (row) => row.imgUrl,
+    header: "Receipt",
+    cell: ({ row }) => {
+      const imgUrl = row.original.imgUrl;
+      return imgUrl ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 gap-1"
+          onClick={() => window.open(imgUrl, "_blank")}
+        >
+          <Eye className="h-3.5 w-3.5" /> View
+        </Button>
+      ) : (
+        <span className="text-slate-300 text-xs">-</span>
+      );
+    }
+  },
+]
+export default function TransactionHistoryPage() {
+  const [localStartDate, setLocalStartDate] = useState<Date | undefined>()
+  const [localEndDate, setLocalEndDate] = useState<Date | undefined>()
+  const dispatch = useAppDispatch();
+  
   // Redux
   const {
     transactions,
@@ -152,6 +257,7 @@ export default function TransactionHistoryPage() {
     totalPages,
     totalElements,
   } = useAppSelector((state: any) => state.transaction);
+  const [localCustomerId, setLocalCustomerId] = useState(filterCustomerId)
 
   const { customers } = useAppSelector((state: any) => state.customer);
 
@@ -160,7 +266,7 @@ export default function TransactionHistoryPage() {
 
   // Init
   useEffect(() => {
-    dispatch(fetchCustomers());
+    dispatch(fetchCustomers({ search: "" }));
     dispatch(fetchTransactions());
   }, [dispatch]);
 
@@ -179,259 +285,89 @@ export default function TransactionHistoryPage() {
     dispatch(fetchTransactions());
   };
 
-  // --- Pagination Handler ---
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 0 && newPage < totalPages) {
-      // Assuming your slice exports a 'setPage' or similar action
-      dispatch(setPage(newPage)); 
-      dispatch(fetchTransactions());
-    }
-  };
-
-  // --- Helper for Payment Mode Icon ---
-  const getPaymentIcon = (mode: string) => {
-    switch (mode) {
-      case "CASH":
-        return <Banknote className="h-4 w-4 text-green-600" />;
-      case "BANK_TRANSFER":
-        return <Landmark className="h-4 w-4 text-blue-600" />;
-      default:
-        return <CreditCard className="h-4 w-4 text-purple-600" />;
-    }
-  };
-
   return (
     <main className="min-h-screen bg-muted/10 font-sans">
       <div className="max-w-[1600px] mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <ShadcnTable
+          title="Transaction"
+          columns={column}
+          data={transactions}
+          loading={loading}
+          error={false}
+        >
+          <div className="flex gap-4 items-end">
+
+            {/* FROM */}
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">From</Label>
+              <DatePicker
+                date={localStartDate}
+                onChange={setLocalStartDate}
+                placeholder="Select start date"
+              />
+            </div>
+
+            {/* TO */}
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">To</Label>
+              <DatePicker
+                date={localEndDate}
+                onChange={setLocalEndDate}
+                placeholder="Select end date"
+              />
+            </div>
+
+            {/* CUSTOMER */}
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Customer</Label>
+              <CustomerFilterCombobox
+                customers={customers}
+                value={localCustomerId}
+                onChange={setLocalCustomerId}
+              />
+            </div>
+
+            {/* APPLY */}
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                Transaction History
-              </h1>
-              <p className="text-muted-foreground text-sm">
-                View all payments received
-              </p>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  dispatch(setTransactionFilters({
+                    customerId: localCustomerId,
+                    startDate: localStartDate
+                      ? format(localStartDate, "yyyy-MM-dd")
+                      : "",
+                    endDate: localEndDate
+                      ? format(localEndDate, "yyyy-MM-dd")
+                      : "",
+                  }))
+                  dispatch(fetchTransactions())
+                }}
+              >
+                Apply
+              </Button>
             </div>
-          </div>
-          <Button variant="outline" className="gap-2 bg-white">
-            <Download className="w-4 h-4" /> Export List
-          </Button>
-        </div>
 
-        {/* Filters Bar */}
-        <Card className="border-none shadow-none bg-white">
-          <CardContent className="p-4 px-0">
-            <div className="flex flex-col md:flex-row gap-4 items-end">
-              {/* Date Filters */}
-              <div className="flex gap-2 items-end w-full md:w-auto">
-                <div className="space-y-1 w-full">
-                  <Label className="text-xs text-muted-foreground">From</Label>
-                  <Input
-                    type="date"
-                    className="h-9"
-                    value={filterStartDate}
-                    onChange={(e) =>
-                      handleFilterChange("startDate", e.target.value)
-                    }
-                  />
-                </div>
-                <div className="space-y-1 w-full">
-                  <Label className="text-xs text-muted-foreground">To</Label>
-                  <Input
-                    type="date"
-                    className="h-9"
-                    value={filterEndDate}
-                    onChange={(e) =>
-                      handleFilterChange("endDate", e.target.value)
-                    }
-                  />
-                </div>
-              </div>
-
-              {/* Customer Filter */}
-              <div className="flex-1 md:max-w-[300px] space-y-1 w-full">
-                <Label className="text-xs text-muted-foreground">
-                  Customer
-                </Label>
-                <CustomerFilterCombobox
-                  customers={customers}
-                  value={filterCustomerId}
-                  onChange={(val) => handleFilterChange("customerId", val)}
-                />
-              </div>
-
-              {/* Reset Button */}
-              <div className="flex-none">
-                {(filterCustomerId || filterStartDate || filterEndDate) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleResetFilters}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50 h-9"
-                  >
-                    <X className="w-4 h-4 mr-1" /> Clear
-                  </Button>
-                )}
-              </div>
+            {/* CLEAR */}
+            <div>
+              <Button
+                variant="ghost"
+                className="w-full text-red-600 hover:bg-red-50"
+                onClick={() => {
+                  setLocalStartDate(undefined)
+                  setLocalEndDate(undefined)
+                  setLocalCustomerId("")
+                  dispatch(resetTransactionFilters())
+                  dispatch(fetchTransactions())
+                }}
+              >
+                <X className="w-4 h-4 mr-1" />
+                Clear
+              </Button>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Transactions Table */}
-        <Card className="border shadow-sm overflow-hidden bg-white">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-slate-50 hover:bg-slate-50 border-b border-slate-200">
-                  <TableHead className="w-[120px] text-xs font-bold text-slate-700">
-                    Date
-                  </TableHead>
-                  <TableHead className="w-[200px] text-xs font-bold text-slate-700">
-                    Customer
-                  </TableHead>
-                  <TableHead className="w-[200px] text-center text-xs font-bold text-slate-700">
-                    Mode
-                  </TableHead>
-                  <TableHead className="min-w-[200px] text-xs font-bold text-slate-700">
-                    Description
-                  </TableHead>
-                  <TableHead className="text-right w-[120px] text-xs font-bold text-slate-700">
-                    Amount
-                  </TableHead>
-                  <TableHead className="text-right w-[120px] text-xs font-bold text-slate-700">
-                    Discount
-                  </TableHead>
-                  <TableHead className="text-center w-[100px] text-xs font-bold text-slate-700">
-                    Receipt
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center">
-                      <div className="flex justify-center items-center gap-2 text-muted-foreground">
-                        <Loader2 className="h-5 w-5 animate-spin" /> Loading
-                        transactions...
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : transactions.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="h-32 text-center text-muted-foreground"
-                    >
-                      <Filter className="h-10 w-10 mx-auto mb-2 text-slate-200" />
-                      No transactions found for the selected period.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  transactions.map((txn: any, index: number) => (
-                    <TableRow
-                      key={index}
-                      className="hover:bg-slate-50 transition-colors border-b last:border-0"
-                    >
-                      {/* Date */}
-                      <TableCell className="font-medium text-sm text-slate-600">
-                        {txn.date
-                          ? format(new Date(txn.date), "dd MMM yyyy")
-                          : "-"}
-                      </TableCell>
-
-                      {/* Customer */}
-                      <TableCell className="font-semibold text-sm text-foreground">
-                        {txn.customerName}
-                        <div className="text-[10px] text-muted-foreground font-normal">
-                          ID: {txn.customerId}
-                        </div>
-                      </TableCell>
-
-                      {/* Mode */}
-                      <TableCell>
-                        <div className="flex justify-center">
-                          <Badge
-                            variant="outline"
-                            className="font-medium flex items-center gap-1.5 bg-slate-50 px-3 py-1"
-                          >
-                            {getPaymentIcon(txn.paymentMode)}
-                            <span className="capitalize">{txn.paymentMode?.toLowerCase().replace("_", " ")}</span>
-                          </Badge>
-                        </div>
-                      </TableCell>
-
-                      {/* Description */}
-                      <TableCell
-                        className="text-sm text-slate-600 truncate max-w-[300px]"
-                        title={txn.description}
-                      >
-                        {txn.description || "-"}
-                      </TableCell>
-
-                      {/* Amount */}
-                      <TableCell className="text-right font-bold font-mono text-base text-emerald-600">
-                        +₹{txn.amount.toLocaleString("en-IN")}
-                      </TableCell>
-
-                      {/* Discount */}
-                      <TableCell className="text-right font-bold font-mono text-base text-slate-600">
-                        ₹{txn.discount ? txn.discount.toLocaleString("en-IN") : "0"}
-                      </TableCell>
-
-                      {/* Receipt */}
-                      <TableCell className="text-center">
-                        {txn.imgUrl ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 gap-1"
-                            onClick={() => setPreviewImage(txn.imgUrl)}
-                          >
-                            <Eye className="h-3.5 w-3.5" /> View
-                          </Button>
-                        ) : (
-                          <span className="text-slate-300 text-xs">-</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
           </div>
-
-          {/* Footer with Pagination (Replaces Total Count/Received) */}
-          <div className="flex items-center justify-between px-4 py-3 border-t bg-slate-50">
-             <div className="text-xs text-muted-foreground">
-               Showing {transactions.length} items (Total: {totalElements})
-             </div>
-             <div className="flex items-center gap-2">
-               <Button 
-                 variant="outline" 
-                 size="icon" 
-                 className="h-8 w-8 bg-white"
-                 onClick={() => handlePageChange(currentPage - 1)}
-                 disabled={currentPage === 0 || loading}
-               >
-                 <ChevronLeft className="h-4 w-4" />
-               </Button>
-               <span className="text-xs font-medium px-2 min-w-[80px] text-center">
-                 Page {currentPage + 1} of {totalPages || 1}
-               </span>
-               <Button 
-                 variant="outline" 
-                 size="icon" 
-                 className="h-8 w-8 bg-white" 
-                 onClick={() => handlePageChange(currentPage + 1)}
-                 disabled={currentPage >= totalPages - 1 || loading}
-               >
-                 <ChevronRight className="h-4 w-4" />
-               </Button>
-             </div>
-          </div>
-        </Card>
+        </ShadcnTable>
       </div>
 
       {/* Image Preview Modal */}
