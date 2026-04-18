@@ -276,6 +276,12 @@ export default function LedgerSheetPage() {
         }
       }
 
+      if (field === "basePrice") {
+        // If user explicitly changes base price, we update the rate per piece accordingly
+        ratePerPiece = Number((sqFt * basePrice).toFixed(2));
+        updated.ratePerPiece = ratePerPiece;
+      }
+
       // 5. Logic: Calculate Total SqFt
       // Total SqFt = SqFt * Quantity
       updated.totalSqft = Number((sqFt * quantity).toFixed(2));
@@ -356,12 +362,16 @@ export default function LedgerSheetPage() {
       header: "SqFt",
     },
     {
-      accessorKey: "quantity",
-      header: "Quantity",
+      accessorKey: "basePrice",
+      header: "Rate/SQFt",
     },
     {
-      accessorKey: "ratePerPiece",
-      header: "Rate/Pc",
+      accessorFn: (row) => row.sqFt * row.basePrice,
+      header: "Total Rate",
+    },
+    {
+      accessorKey: "quantity",
+      header: "Quantity",
     },
     {
       accessorKey: "totalSqft",
@@ -374,6 +384,20 @@ export default function LedgerSheetPage() {
     {
       accessorKey: "amount",
       header: "Amount",
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleEditClick(row.original)}
+        >
+          <Pencil className="h-4 w-4" />
+          Edit
+        </Button>
+      ),
     },
   ]
 
@@ -409,10 +433,10 @@ export default function LedgerSheetPage() {
         entry.height,
         entry.width,
         entry.sqFt,
-        entry.quantity,
-        entry.ratePerPiece,
-        (entry.sqFt * entry.quantity).toFixed(2),
-        // entry.basePrice,
+        entry.basePrice,
+        Number(entry.sqFt) * Number(entry.basePrice),
+        (entry.quantity),
+        entry.totalSqft,
         entry.extraCharge,
         entry.amount.toLocaleString("en-IN"),
       ]);
@@ -422,15 +446,15 @@ export default function LedgerSheetPage() {
         head: [
           [
             "Date",
-            "Item Name",
+            "Product Name",
             "Description",
             "H",
             "W",
             "Sq ft",
+            "Rate/SQFt",
+            "Total Rate",
             "Qty",
-            "Rate/Pc",
             "Total Sqft",
-            // "1pc Rate",
             "Extra",
             "Amount",
           ],
@@ -545,15 +569,15 @@ export default function LedgerSheetPage() {
       wsData.push(
         [
           "Date",
-          "Item Name",
+          "Product Name",
           "Description",
           "H",
           "W",
           "Sq ft",
+          "Rate/SQFt",
+          "Total Rate",
           "Qty",
-          "Rate/Pc",
           "Total Sqft",
-          // "1pc Rate",
           "Extra",
           "Amount",
         ],
@@ -568,10 +592,10 @@ export default function LedgerSheetPage() {
           entry.height,
           entry.width,
           entry.sqFt,
-          entry.quantity,
-          entry.ratePerPiece,
-          (entry.sqFt * entry.quantity).toFixed(2),
-          // entry.basePrice,
+          entry.basePrice,
+          Number(entry.sqFt) * Number(entry.basePrice),
+          (entry.quantity),
+          entry.totalSqft,
           entry.extraCharge,
           entry.amount.toLocaleString("en-IN"),
         ]);
@@ -875,7 +899,7 @@ export default function LedgerSheetPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Location</Label>
+                  <Label>Description</Label>
                   <Input
                     onChange={(e) =>
                       handleEditFieldChange("location", e.target.value)
@@ -931,14 +955,26 @@ export default function LedgerSheetPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Total SqFt</Label>
+                  <Label>Rate /SQFT</Label>
                   <Input
                     type="number"
-                    value={editingEntry.totalSqft}
-                    readOnly
-                    className="bg-muted text-muted-foreground"
+                    value={editingEntry.basePrice}
+                    onChange={(e) =>
+                      handleEditFieldChange("basePrice", e.target.value)
+                    }
                   />
                 </div>
+                  <div className="space-y-2">
+                  <Label>Total Rate</Label>
+                  <Input
+                    type="number"
+                    value={editingEntry.ratePerPiece}
+                    onChange={(e) =>
+                      handleEditFieldChange("ratePerPiece", e.target.value)
+                    }
+                  />
+                </div>
+               
               </div>
 
               {/* Pricing Row */}
@@ -953,16 +989,16 @@ export default function LedgerSheetPage() {
                     }
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Rate / Pc</Label>
+                 <div className="space-y-2">
+                  <Label>Total SqFt</Label>
                   <Input
                     type="number"
-                    value={editingEntry.ratePerPiece}
-                    onChange={(e) =>
-                      handleEditFieldChange("ratePerPiece", e.target.value)
-                    }
+                    value={editingEntry.totalSqft}
+                    readOnly
+                    className="bg-muted text-muted-foreground"
                   />
                 </div>
+              
                 <div className="space-y-2">
                   <Label>Extra Charge</Label>
                   <Input

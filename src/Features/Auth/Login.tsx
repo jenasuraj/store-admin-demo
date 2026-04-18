@@ -61,7 +61,7 @@ export default function LoginPage() {
                   className="h-10 w-10"
                 />
                 <span className="ml-2 text-xl font-semibold">
-                  Actify Marketplace Admin
+                  Actify Portal
                 </span>
               </div>
               <div className="space-y-2 text-center">

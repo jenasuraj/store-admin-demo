@@ -1,4 +1,4 @@
-"use client"
+
 
 import { useMedia } from "react-use"
 

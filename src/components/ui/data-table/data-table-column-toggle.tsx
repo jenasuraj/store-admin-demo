@@ -1,4 +1,4 @@
-"use client"
+
 
 import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu"
 import { Settings2 } from "lucide-react"

@@ -59,6 +59,7 @@ import { BASE_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
+import { createPortal } from "react-dom";
 
 // --- Types ---
 
@@ -159,156 +160,344 @@ function RowProductCombobox({
   onLoadMore: (node: HTMLDivElement) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const hasAutoOpenedRef = useRef(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
 
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const sentinelRef = useRef<HTMLLIElement>(null);
 
-  // Find selected item name for display
-  const selectedItemName =
-    selectedProductId !== 0
-      ? selectedProductName
-      : "Select Product...";
+  const selectedLabel =
+    selectedProductId !== 0 ? selectedProductName : "Select Product...";
 
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          className={cn(
-            "w-full justify-between text-left font-normal h-8 text-xs px-2",
-            !selectedProductId && "text-muted-foreground"
-          )}
-          onKeyDown={(e) => {
-            // ✅ Open ONLY ONCE per focus
-            if (
-              e.key === "Tab" &&
-              !open &&
-              !hasAutoOpenedRef.current &&
-              !e.shiftKey
-            ) {
-              e.preventDefault();
-              e.stopPropagation();
+  // Best match index based on search term
+  const bestMatchIndex = useMemo(() => {
+    if (!searchTerm.trim()) return -1;
+    const lower = searchTerm.toLowerCase();
+    let bestIndex = -1;
+    let bestScore = -1;
 
-              hasAutoOpenedRef.current = true; // 🔒 lock auto-open
-              setOpen(true);
-              return;
-            }
+    items.forEach((item, index) => {
+      const label = (item.attributes?.[0]?.title || item.name).toLowerCase();
+      const sku = item.defaultSku?.toLowerCase() ?? "";
+      let score = 0;
+      if (label.startsWith(lower)) score = 3;
+      else if (label.includes(lower)) score = 2;
+      else if (sku.includes(lower)) score = 1;
 
-            // Enter opens normally (optional)
-            if (e.key === "Enter" && !open) {
-              e.preventDefault();
-              setOpen(true);
-            }
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = index;
+      }
+    });
 
-            // Esc closes
-            if (e.key === "Escape" && open) {
-              e.preventDefault();
-              setOpen(false);
-            }
-          }}
+    return bestScore > 0 ? bestIndex : -1;
+  }, [searchTerm, items]);
 
-        >
-          <span className="truncate">{selectedItemName}</span>
-          <ChevronsUpDownIcon className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[400px] p-0" align="start">
-        <Command shouldFilter={false}>
-          <CommandInput
+  // Auto-focus best match when search changes
+  useEffect(() => {
+    setFocusedIndex(bestMatchIndex);
+  }, [bestMatchIndex]);
+
+  // Scroll focused item into view
+  useEffect(() => {
+    if (focusedIndex >= 0 && listRef.current) {
+      const el = listRef.current.querySelectorAll<HTMLLIElement>(
+        "li[role='option']"
+      )[focusedIndex];
+      el?.scrollIntoView({ block: "nearest" });
+    }
+  }, [focusedIndex]);
+
+  // Position dropdown relative to trigger
+  function calculatePosition() {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setDropdownPos({
+      top: rect.bottom + window.scrollY + 4,
+      left: rect.left + window.scrollX,
+      width: 400,
+    });
+  }
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      const dropdown = document.getElementById("row-product-dropdown");
+      if (
+        triggerRef.current?.contains(e.target as Node) ||
+        dropdown?.contains(e.target as Node)
+      )
+        return;
+      closeDropdown();
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  // Reposition on scroll/resize
+  useEffect(() => {
+    if (!open) return;
+    const handler = () => calculatePosition();
+    window.addEventListener("scroll", handler, true);
+    window.addEventListener("resize", handler);
+    return () => {
+      window.removeEventListener("scroll", handler, true);
+      window.removeEventListener("resize", handler);
+    };
+  }, [open]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          onLoadMore(sentinelRef.current as unknown as HTMLDivElement);
+        }
+      },
+      { threshold: 1.0 }
+    );
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, loading, onLoadMore]);
+
+  function openDropdown() {
+    calculatePosition();
+    setOpen(true);
+    setFocusedIndex(-1);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
+  function closeDropdown() {
+    setOpen(false);
+    setFocusedIndex(-1);
+    setSearchTerm("");
+  }
+
+  function selectItem(item: ledgerProductsDataType) {
+    onSelect(item);
+    setSearchTerm("");
+    setOpen(false);
+    setFocusedIndex(-1);
+    setTimeout(() => triggerRef.current?.focus(), 0);
+  }
+
+  function handleTriggerKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
+    if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
+      e.preventDefault();
+      openDropdown();
+      return;
+    }
+
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      setSearchTerm(e.key);
+      openDropdown();
+    }
+  }
+
+  function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setFocusedIndex((prev) => Math.min(prev + 1, items.length - 1));
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setFocusedIndex((prev) => Math.max(prev - 1, 0));
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (focusedIndex >= 0 && items[focusedIndex]) {
+          selectItem(items[focusedIndex]);
+        }
+        break;
+      case "Escape":
+        e.preventDefault();
+        closeDropdown();
+        triggerRef.current?.focus();
+        break;
+      case "Tab":
+        closeDropdown();
+        break;
+    }
+  }
+
+  const dropdown = open
+    ? createPortal(
+      <div
+        id="row-product-dropdown"
+        style={{
+          position: "absolute",
+          top: dropdownPos.top,
+          left: dropdownPos.left,
+          width: dropdownPos.width,
+          zIndex: 9999,
+        }}
+        className="border border-border rounded-md bg-popover shadow-lg"
+      >
+        {/* Search */}
+        <div className="p-2 border-b border-border">
+          <input
+            ref={inputRef}
+            type="text"
+            className="w-full h-7 text-xs px-2 border border-input rounded bg-background focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="Search products..."
             value={searchTerm}
-            onValueChange={setSearchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+            }}
+            onKeyDown={handleInputKeyDown}
           />
-          <CommandList className="max-h-[300px] overflow-y-auto">
-            {loading && items.length === 0 && (
-              <div className="p-4 text-center flex justify-center">
-                <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading...
-              </div>
-            )}
-            {items.length === 0 && !loading && (
-              <CommandEmpty>No products found.</CommandEmpty>
-            )}
+        </div>
 
-            <CommandGroup>
-              {items.map((item) => {
-                const isSelected = selectedProductId === item.productId;
-                const isSpecial = priceListMap.hasOwnProperty(item.productId);
-                const price = isSpecial
-                  ? priceListMap[item.productId]
-                  : item.attributes?.[0]?.price ?? 0;
+        {/* List */}
+        <ul
+          ref={listRef}
+          role="listbox"
+          className="max-h-[280px] overflow-y-auto py-1"
+        >
+          {loading && items.length === 0 && (
+            <li className="flex items-center justify-center p-4 text-xs text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              Loading...
+            </li>
+          )}
 
-                return (
-                  <CommandItem
-                    key={item.productId}
-                    value={item.name}
-                    onSelect={() => {
-                      onSelect(item);
-                      setSearchTerm("");
-                      setOpen(false);
-                    }}
-                  >
-                    <div className="flex items-center w-full">
-                      <CheckIcon
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          isSelected ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      <div className="flex flex-col flex-1">
-                        <span className="flex items-center gap-2 font-medium">
-                          {item.attributes?.[0]?.title || item.name}
-                          {isSpecial && (
-                            <Badge
-                              variant="secondary"
-                              className="h-5 px-1.5 text-[10px] bg-green-100 text-green-800"
-                            >
-                              ₹{price} (Special)
-                            </Badge>
-                          )}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          SKU: {item.defaultSku} | Base: ₹{price}
-                        </span>
-                      </div>
-                    </div>
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
+          {!loading && items.length === 0 && (
+            <li className="p-4 text-xs text-center text-muted-foreground">
+              No products found.
+            </li>
+          )}
 
-            {!loading && hasMore && (
-              <div
-                ref={onLoadMore}
-                className="p-2 flex justify-center items-center w-full h-8"
+          {items.map((item, index) => {
+            const isSelected = selectedProductId === item.productId;
+            const isFocused = focusedIndex === index;
+            const isBestMatch = !isFocused && index === bestMatchIndex;
+            const isSpecial = priceListMap.hasOwnProperty(item.productId);
+            const price = isSpecial
+              ? priceListMap[item.productId]
+              : item.attributes?.[0]?.price ?? 0;
+            const label = item.attributes?.[0]?.title || item.name;
+
+            return (
+              <li
+                key={item.productId}
+                role="option"
+                aria-selected={isSelected}
+                className={cn(
+                  "flex items-center px-3 py-2 text-xs cursor-pointer select-none",
+                  isFocused
+                    ? "bg-accent text-accent-foreground"
+                    : isBestMatch
+                      ? "bg-accent/50 text-accent-foreground"
+                      : "hover:bg-accent hover:text-accent-foreground"
+                )}
+                onMouseEnter={() => setFocusedIndex(index)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  selectItem(item);
+                }}
               >
+                <CheckIcon
+                  className={cn(
+                    "mr-2 h-4 w-4 shrink-0",
+                    isSelected ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className="flex items-center gap-2 font-medium truncate">
+                    {label}
+                    {isSpecial && (
+                      <Badge
+                        variant="secondary"
+                        className="h-5 px-1.5 text-[10px] bg-green-100 text-green-800 shrink-0"
+                      >
+                        ₹{price} (Special)
+                      </Badge>
+                    )}
+                  </span>
+                  <span className="text-muted-foreground truncate">
+                    SKU: {item.defaultSku} | Base: ₹{price}
+                  </span>
+                </div>
+              </li>
+            );
+          })}
+
+          {hasMore && (
+            <li
+              ref={sentinelRef}
+              className="flex items-center justify-center p-2"
+            >
+              {loading && (
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              </div>
-            )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+              )}
+            </li>
+          )}
+        </ul>
+      </div>,
+      document.body
+    )
+    : null;
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        className={cn(
+          "w-full h-8 text-xs px-2 flex items-center justify-between border border-input rounded-md bg-background",
+          "focus:outline-none focus:ring-2 focus:ring-ring",
+          !selectedProductId && "text-muted-foreground"
+        )}
+        onClick={openDropdown}
+        onKeyDown={handleTriggerKeyDown}
+      >
+        <span className="truncate">{selectedLabel}</span>
+        <ChevronsUpDownIcon className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+      </button>
+
+      {dropdown}
+    </>
   );
 }
+
 
 // Customer Combobox
 function CustomerCombobox({
   customers,
   selectedCustomerId,
+  selectedCustomerName,
   onSelect,
 }: {
   customers: any[];
   selectedCustomerId: string;
-  onSelect: (id: string) => void;
+  selectedCustomerName: string;
+  onSelect: (id: string, name: string) => void;
 }) {
   const dispatch = useAppDispatch();
+
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
-  const hasAutoOpenedRef = useRef(false);
-  const selectedCustomer = customers.find(
-    (c) => c.id === selectedCustomerId
-  );
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [dropdownPos, setDropdownPos] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+  });
 
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  // ✅ Selected Customer
+  const selectedCustomer = selectedCustomerName || "Select customer...";
+
+  // ✅ API Search (debounced)
   useEffect(() => {
     const timer = setTimeout(() => {
       dispatch(fetchCustomers({ search }));
@@ -317,85 +506,212 @@ function CustomerCombobox({
     return () => clearTimeout(timer);
   }, [search, dispatch]);
 
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between"
-          onKeyDown={(e) => {
-            // ✅ Open ONLY ONCE per focus
-            if (
-              e.key === "Tab" &&
-              !open &&
-              !hasAutoOpenedRef.current &&
-              !e.shiftKey
-            ) {
-              e.preventDefault();
-              e.stopPropagation();
+  const selectedLabel = selectedCustomerName || "Select customer...";
 
-              hasAutoOpenedRef.current = true; // 🔒 lock auto-open
-              setOpen(true);
-              return;
-            }
+  // ✅ Scroll focused item into view
+  useEffect(() => {
+    if (focusedIndex >= 0 && listRef.current) {
+      const el = listRef.current.querySelectorAll<HTMLLIElement>(
+        "li[role='option']"
+      )[focusedIndex];
+      el?.scrollIntoView({ block: "nearest" });
+    }
+  }, [focusedIndex]);
 
-            // Enter opens normally (optional)
-            if (e.key === "Enter" && !open) {
-              e.preventDefault();
-              setOpen(true);
-            }
+  // ✅ Dropdown position
+  function calculatePosition() {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setDropdownPos({
+      top: rect.bottom + window.scrollY + 4,
+      left: rect.left + window.scrollX,
+      width: Math.max(rect.width, 300),
+    });
+  }
 
-            // Esc closes
-            if (e.key === "Escape" && open) {
-              e.preventDefault();
-              setOpen(false);
-            }
-          }}
-        >
-          {selectedCustomer
-            ? `${selectedCustomer.firstname} ${selectedCustomer.lastname || ""}`
-            : "Select customer..."}
-          <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[300px] sm:w-[400px] p-0">
-        <Command>
-          <CommandInput
+  // ✅ Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      const dropdown = document.getElementById("customer-dropdown");
+      if (
+        triggerRef.current?.contains(e.target as Node) ||
+        dropdown?.contains(e.target as Node)
+      )
+        return;
+      closeDropdown();
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  // ✅ Reposition on scroll/resize
+  useEffect(() => {
+    if (!open) return;
+    const handler = () => calculatePosition();
+    window.addEventListener("scroll", handler, true);
+    window.addEventListener("resize", handler);
+    return () => {
+      window.removeEventListener("scroll", handler, true);
+      window.removeEventListener("resize", handler);
+    };
+  }, [open]);
+
+  function openDropdown() {
+    calculatePosition();
+    setOpen(true);
+    setFocusedIndex(-1);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
+  function closeDropdown() {
+    setOpen(false);
+    setFocusedIndex(-1);
+    setSearch(""); // ✅ reset search
+  }
+
+  function selectItem(customer: any) {
+    const id = customer.id; // ✅ clean id
+    const name = customer.firstname;
+    onSelect(id, name);
+    setOpen(false);
+    setFocusedIndex(-1);
+    setSearch("");
+    setTimeout(() => triggerRef.current?.focus(), 0);
+  }
+
+  function handleTriggerKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
+    if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
+      e.preventDefault();
+      openDropdown();
+      return;
+    }
+  }
+
+  function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setFocusedIndex((prev) =>
+          Math.min(prev + 1, customers.length - 1)
+        );
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setFocusedIndex((prev) => Math.max(prev - 1, 0));
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (focusedIndex >= 0 && customers[focusedIndex]) {
+          selectItem(customers[focusedIndex]);
+        }
+        break;
+      case "Escape":
+        e.preventDefault();
+        closeDropdown();
+        triggerRef.current?.focus();
+        break;
+      case "Tab":
+        closeDropdown();
+        break;
+    }
+  }
+
+  const dropdown = open
+    ? createPortal(
+      <div
+        id="customer-dropdown"
+        style={{
+          position: "absolute",
+          top: dropdownPos.top,
+          left: dropdownPos.left,
+          width: dropdownPos.width,
+          zIndex: 9999,
+        }}
+        className="border border-border rounded-md bg-popover shadow-lg"
+      >
+        {/* 🔍 Search */}
+        <div className="p-2 border-b border-border">
+          <input
+            ref={inputRef}
+            type="text"
+            className="w-full h-8 text-sm px-2 border border-input rounded bg-background focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="Search customer..."
             value={search}
-            onValueChange={setSearch}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={handleInputKeyDown}
           />
-          <CommandList>
-            <CommandEmpty>No customer found.</CommandEmpty>
-            <CommandGroup>
-              {customers.map((customer) => {
-                const id = (customer.id || customer.customerId).toString();
-                return (
-                  <CommandItem
-                    key={id}
-                    value={`${customer.firstname} ${customer.lastname || ""}`}
-                    onSelect={() => {
-                      onSelect(id);
-                      setOpen(false);
-                    }}
-                  >
-                    <CheckIcon
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        selectedCustomerId === id ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    {customer.firstname} {customer.lastname}
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+        </div>
+
+        {/* 📋 List */}
+        <ul
+          ref={listRef}
+          role="listbox"
+          className="max-h-[280px] overflow-y-auto py-1"
+        >
+          {customers.length === 0 && (
+            <li className="p-4 text-sm text-center text-muted-foreground">
+              No customer found.
+            </li>
+          )}
+
+          {customers.map((customer, index) => {
+            const id = customer.id;
+            const isSelected = selectedCustomerId === id;
+            const isFocused = focusedIndex === index;
+
+            return (
+              <li
+                key={id}
+                role="option"
+                aria-selected={isSelected}
+                className={cn(
+                  "flex items-center px-3 py-2 text-sm cursor-pointer select-none",
+                  isFocused
+                    ? "bg-accent text-accent-foreground"
+                    : "hover:bg-accent hover:text-accent-foreground"
+                )}
+                onMouseEnter={() => setFocusedIndex(index)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  selectItem(customer);
+                }}
+              >
+                <CheckIcon
+                  className={cn(
+                    "mr-2 h-4 w-4 shrink-0",
+                    isSelected ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                {customer.firstname}
+              </li>
+            );
+          })}
+        </ul>
+      </div>,
+      document.body
+    )
+    : null;
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        className={cn(
+          "w-full h-8 text-sm px-3 flex items-center justify-between border border-input rounded-md bg-background",
+          "focus:outline-none focus:ring-2 focus:ring-ring",
+          !selectedCustomer && "text-muted-foreground"
+        )}
+        onClick={openDropdown}
+        onKeyDown={handleTriggerKeyDown}
+      >
+        <span className="truncate">{selectedLabel}</span>
+        <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      </button>
+
+      {dropdown}
+    </>
   );
 }
 
@@ -478,7 +794,7 @@ export default function CreateEntryPage() {
       // If no draft, ensure at least one empty row exists
       setRows([createEmptyRow()]);
     }
-    dispatch(fetchCustomers());
+    dispatch(fetchCustomers({ search: "" }));
   }, [dispatch]);
 
   // --- 2. Browser Refresh Protection ---
@@ -945,20 +1261,10 @@ export default function CreateEntryPage() {
                         <CustomerCombobox
                           customers={customers}
                           selectedCustomerId={row.customerId}
-                          onSelect={(id) => {
-                            const customer = customers.find(
-                              (c) => (c.id || c.customerId).toString() === id
-                            );
-
+                          selectedCustomerName={row.customerName}
+                          onSelect={(id, name) => {
                             updateRow(row.internalId, "customerId", id);
-                            updateRow(
-                              row.internalId,
-                              "customerName",
-                              customer
-                                ? `${customer.firstname}`
-                                : ""
-                            );
-                            setSearchTerm("");
+                            updateRow(row.internalId, "customerName", name);
                           }}
                         />
                       </TableCell>
