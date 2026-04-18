@@ -136,3 +136,21 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+
+
+/* Chrome, Safari, Edge */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: none;
+}
+
+/* IE/Edge (old) */
+* {
+  -ms-overflow-style: none;
+}

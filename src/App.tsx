@@ -19,6 +19,11 @@ import CompanyManager from "./pages/CompanyManager";
 import CreateEntryPage from "./pages/EntryPage";
 import LedgerPaymentsPage from "./pages/ledger-payments";
 import LedgerViews from "./pages/ledger-view";
+import Chocolate from "./Features/template-manager/Template";
+import Form from "./Features/template-manager/Form";
+import TemplateManager from "./Features/template-manager/TemplateManager";
+
+
 
 axios.interceptors.request.use(
   function (config) {
@@ -60,6 +65,14 @@ function App() {
         {
           path: "/home",
           element: <Home />,
+        },
+        {
+          path: "/template-manager/visual",
+          element: <Chocolate />,
+        },
+        {
+          path: "/template-manager",
+          element: <TemplateManager />,
         },
         {
           path: "/masters",
