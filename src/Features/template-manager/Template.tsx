@@ -7,6 +7,7 @@ interface MenuItem {
   price: string
   desc: string
   tag: string
+  img:string
 }
 
 const Chocolate = () => {
@@ -99,10 +100,10 @@ const Chocolate = () => {
     [key: string]: MenuItem[]
   } = {
     all: [
-      { category: "Chocolates", name: "Dark Chocolate Truffle", price: "£4.50", desc: "Rich 70% dark chocolate ganache rolled in cocoa powder", tag: "Bestseller" },
-      { category: "Chocolates", name: "Caramel Sea Salt", price: "£4.50", desc: "Smooth caramel with a hint of sea salt", tag: "" },
-      { category: "Gifts", name: "Signature Gift Box", price: "£25", desc: "12 assorted chocolates in a luxury gift box", tag: "Perfect for gifting" },
-      { category: "Drinks", name: "Signature Hot Chocolate", price: "£4.20", desc: "Rich, creamy hot chocolate made with Belgian chocolate", tag: "" }
+      { category: "Chocolates", name: "Dark Chocolate Truffle", price: "£4.50", desc: "Rich 70% dark chocolate ganache rolled in cocoa powder", tag: "Bestseller",img:"/static-menu/dark.png" },
+      { category: "Chocolates", name: "Caramel Sea Salt", price: "£4.50", desc: "Smooth caramel with a hint of sea salt", tag: "" ,img:"/static-menu/caramel.png"},
+      { category: "Gifts", name: "Signature Gift Box", price: "£25", desc: "12 assorted chocolates in a luxury gift box", tag: "Perfect for gifting",img:"/static-menu/gift.png" },
+      { category: "Drinks", name: "Signature Hot Chocolate", price: "£4.20", desc: "Rich, creamy hot chocolate made with Belgian chocolate", tag: "",img:"/static-menu/hot-chocolate.png" }
     ],
     chocolates: [],
     gifts: [],
@@ -231,7 +232,7 @@ const Chocolate = () => {
       {/* Background Image */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-300 group-hover:scale-105"
-        style={{ backgroundImage: 'url("/cake-img.jpg")', backgroundSize: 'cover', backgroundPosition: 'center' }}
+        style={{ backgroundImage: `url(${item.img})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         {/* Gradient overlay - dark at bottom, lighter at top */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10"></div>

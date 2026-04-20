@@ -80,7 +80,7 @@ function App() {
           element: <Home />,
         },
         {
-          path: "/template-manager/visual",
+          path: "/visual",
           element: <Chocolate />,
         },
         {
