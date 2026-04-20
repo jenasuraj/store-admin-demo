@@ -80,7 +80,7 @@ const TemplateManager = () => {
         return {
           id: item.id,
           name: item.templateName,
-          description: templateDef.description || '',
+          description: item.description || '',
           template: templateDef.template || item.templateName,
           tabs: templateDef.tabs || {},
         };

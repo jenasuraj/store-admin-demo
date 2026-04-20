@@ -80,6 +80,7 @@ interface DynamicFormProps {
 }
 
 const DynamicForm = ({ template }: DynamicFormProps) => {
+  console.log("template that i got is ",template)
   const [activeTab, setActiveTab] = useState<string>('');
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [dynamicImageFields, setDynamicImageFields] = useState<number[]>([0]);

@@ -1,5 +1,119 @@
 import { useEffect, useState } from "react"
-import { toast } from "sonner"
+import { BASE_URL } from "@/lib/constants"
+import axios from "axios"
+import DynamicForm from "../template-manager/DynamicForm"
+
+
+
+interface Template {
+  id: number;
+  name: string;
+  description: string;
+  tabs: Record<string, any>;
+}
+
+const LandingPage = () => {
+
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+
+  const fetchAssignedTemplate = async () => {
+    try {
+      const response = await axios.get(BASE_URL + '/api/template/assigned');
+      const rawData = Array.isArray(response.data) ? response.data[0] : response.data;
+      
+      if (!rawData) {
+        setSelectedTemplate(null);
+        return;
+      }
+      const templateJson = rawData.templateJson || [];
+      const tabs = templateJson[0]?.tabs || {};
+      
+      setSelectedTemplate({
+        id: rawData.id,
+        name: rawData.templateName,
+        description: rawData.description || '',
+        tabs: tabs,
+      });
+    } catch (error) {
+      console.error('Failed to fetch assigned template', error);
+      alert('Failed to load template. Please try again.');
+      setSelectedTemplate(null);
+    }
+  };
+
+
+
+  useEffect(() => {
+    fetchAssignedTemplate();
+  }, []);
+
+
+  return (
+    <div className="h-screen w-full p-6">
+      {selectedTemplate ? (
+        <div className="space-y-4">
+          <div className="p-4">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {selectedTemplate.name} Template
+            </h1>
+            <p className="mt-2">{selectedTemplate.description}</p>
+          </div>
+          <DynamicForm template={selectedTemplate} />
+        </div>
+      ) : (
+        <div className="flex items-center justify-center h-full">
+          <p className="text-gray-600">No template assigned yet.</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default LandingPage;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * 
+ * import { toast } from "sonner"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -14,136 +128,14 @@ import { Plus, Trash2, Save } from "lucide-react"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import MobilePreview from "./MobilePreview"
 import ImageUploadModal from "../Products/Components/ImageUploadModal"
+import { useEffect, useState } from "react"
 import { BASE_URL } from "@/lib/constants"
 import axios from "axios"
 import DynamicForm from "../template-manager/DynamicForm"
-
-
-interface Template {
-  id: number;
-  name: string;
-  description: string;
-  templateJson: Array<{
-    tabs: Record<string, any>;
-  }>;
-  imgPreview: string | null;
-}
-
-// Transformed template structure that DynamicForm expects
-interface TransformedTemplate {
-  id: number;
-  name: string;
-  description: string;
-  tabs: Record<string, any>;
-}
-
-const LandingPage = () => {
-  const [rawTemplates, setRawTemplates] = useState<Template[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<TransformedTemplate | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchAll = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(BASE_URL + '/api/template/assigned');
-      console.log('Raw response:', response.data);
-      const rawData = Array.isArray(response.data) ? response.data : [response.data];
-      setRawTemplates(rawData);
-      const transformed = transformTemplateData(response.data);
-      if (transformed.length > 0) {
-        setSelectedTemplate(transformed[0]);
-      }
-      
-    } catch (error) {
-      console.error('Failed to fetch templates', error);
-      toast.error('Failed to fetch templates');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Transform the API response to match DynamicForm's expected structure
-  const transformTemplateData = (apiData: any): TransformedTemplate[] => {
-    // Handle single template object
-    if (apiData && !Array.isArray(apiData)) {
-      const templateJson = apiData.templateJson || [];
-      const tabs = templateJson[0]?.tabs || {};
-      
-      return [{
-        id: apiData.id,
-        name: apiData.templateName,
-        description: apiData.description || '',
-        tabs: tabs
-      }];
-    }
-    
-    // Handle array of templates
-    if (Array.isArray(apiData)) {
-      return apiData.map(item => {
-        const templateJson = item.templateJson || [];
-        const tabs = templateJson[0]?.tabs || {};
-        
-        return {
-          id: item.id,
-          name: item.templateName,
-          description: item.description || '',
-          tabs: tabs
-        };
-      });
-    }
-    
-    return [];
-  };
-
-  useEffect(() => {
-    fetchAll();
-  }, []);
-
-
-
-  if (loading) {
-    return (
-      <div className="h-screen w-full flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading templates...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="h-screen w-full p-6">
-      {selectedTemplate ? (
-        <div className="space-y-4">
-          {/* Template Name Header */}
-          <div className=" p-4">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {selectedTemplate.name + " " + "Template"} 
-                </h1>
-            </div>
-          </div>
-          
-          {/* Dynamic Form */}
-          <DynamicForm template={selectedTemplate} />
-        </div>
-      ) : (
-        <div className="flex items-center justify-center h-full">
-          <p className="text-gray-600">No templates available</p>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default LandingPage;
-
-
-
-
-
-/**
+ * 
+ * 
+ * 
+ * 
 const categorySchema = z.object({
   id: z.number(),
   name: z.string().min(1, "Category name is required"),
