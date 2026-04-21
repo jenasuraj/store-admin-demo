@@ -3,6 +3,8 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import axios from 'axios';
+import { BASE_URL } from '@/lib/constants';
 
 
 
@@ -77,10 +79,17 @@ interface DynamicFormProps {
     description: string;
     tabs: Record<string, any>;
   };
+  clientAdmin?:boolean;
 }
 
-const DynamicForm = ({ template }: DynamicFormProps) => {
-  console.log("template that i got is ",template)
+const DynamicForm = ({ template, clientAdmin }: DynamicFormProps) => {
+  
+  console.log("client admin is",clientAdmin)
+  console.log(template.id)
+
+
+
+
   const [activeTab, setActiveTab] = useState<string>('');
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [dynamicImageFields, setDynamicImageFields] = useState<number[]>([0]);
@@ -110,6 +119,32 @@ const DynamicForm = ({ template }: DynamicFormProps) => {
     updated[index] = file ? file.name : '';
     setField('gallery', 'galleryImages', updated);
   };
+
+
+const handleSubmitTemplateContent = async () => {
+  if (!clientAdmin) {
+    alert("Master can't insert data");
+    return;
+  }
+
+  const payload = {
+    formTemplateId: template.id,
+    formJson: [formData],
+  };
+
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/api/dynamic-template/upsert`,
+      payload
+    );
+
+    alert("Template saved successfully");
+  } catch (error) {
+    console.error(error);
+      alert("Something went wrong");
+  }
+};
+
 
   const renderField = (field: any, tabName: string) => {
     const value = formData[tabName]?.[field.name];
@@ -285,7 +320,7 @@ const DynamicForm = ({ template }: DynamicFormProps) => {
       {/* Footer */}
       <div className="border-t border-gray-200 px-6 py-4 bg-white rounded-b-lg flex justify-end">
         <button
-          onClick={() => console.log('Form Data:', formData)}
+          onClick={() => handleSubmitTemplateContent()}
           className="px-6 py-2 bg-black text-white rounded-sm hover:bg-gray-800"
         >
           Submit Response

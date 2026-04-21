@@ -58,7 +58,7 @@ const Chocolate = () => {
       description: "Whether you're popping in for a coffee, planning a birthday cake, or need catering for an event — we'd love to hear from you.",
       address: "Rourkela, Odisha, India",
       phone: "9876543210",
-      email: "shop@email.com",
+      email: "shop@gmail.com",
       instagram: "https://instagram.com/shop"
     },
     footer: {
@@ -256,47 +256,85 @@ const Chocolate = () => {
 </div>
       </section>
 
+
+
+
       {/* OUR STORY + HOURS */}
-      <section id="story" className="px-4 md:px-12 py-16 md:py-24 bg-[#FDF4EF]">
-        <div className='flex flex-row gap-5 items-center'>
-          <p className='h-[2px] w-[20px] bg-[#b64826]' />
-          <p className='uppercase text-[#b74d2d] text-sm tracking-widest'>{response.ourStory.tag}</p>
+ <section id="story" className="px-4 md:px-12 py-16 md:py-24 bg-[#FDF4EF]">
+  <div className='flex flex-row gap-5 items-center'>
+    <p className='h-[2px] w-[20px] bg-[#b64826]' />
+    <p className='uppercase text-[#b74d2d] text-sm tracking-widest'>
+      {response.ourStory.tag}
+    </p>
+  </div>
+
+  <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl text-[#3D1F0A] mb-3 tracking-tight">
+    {response.ourStory.heading}
+  </h2>
+
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-16 mt-6">
+    
+    {/* LEFT SIDE */}
+    <div>
+      <p className="text-[#7A5C48] text-sm md:text-[15px] leading-relaxed font-light mb-4">
+        {response.ourStory.description}
+      </p>
+
+      <div className="flex flex-wrap gap-2 mt-4">
+        {(response.ourStory?.highlights || []).map((item, i) => (
+          <span
+            key={i}
+            className="px-3 py-1 text-xs bg-[#F3E2D8] text-[#B74D2D] rounded-full border border-[rgba(183,77,45,0.2)]"
+          >
+            {item}
+          </span>
+        ))}
+      </div>
+    </div>
+
+    {/* RIGHT SIDE */}
+    <div>
+      {/* TABLE */}
+      <div className="bg-white rounded-2xl border border-[rgba(140,80,40,0.15)] overflow-hidden">
+        <div className="bg-[#C8502A] px-5 md:px-6 py-4 md:py-5 text-white font-['Playfair_Display',serif] text-base md:text-lg">
+          Opening hours
         </div>
-        <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl text-[#3D1F0A] mb-3 tracking-tight">{response.ourStory.heading}</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-16 mt-6">
-          <div>
-            <p className="text-[#7A5C48] text-sm md:text-[15px] leading-relaxed font-light mb-4">
-              {response.ourStory.description}
-            </p>
-            <div className="flex flex-wrap gap-2 mt-4">
-              {(response.ourStory?.highlights || []).map((item, i) => (
-                <span key={i} className="px-3 py-1 text-xs bg-[#F3E2D8] text-[#B74D2D] rounded-full border border-[rgba(183,77,45,0.2)]">
-                  {item}
-                </span>
-              ))}
+
+        <div className="px-4 md:px-6">
+          {[
+            { day: "Monday", open: response.timings.mondayOpen, close: response.timings.mondayClose },
+            { day: "Tuesday", open: response.timings.tuesdayOpen, close: response.timings.tuesdayClose },
+            { day: "Wednesday", open: response.timings.wednesdayOpen, close: response.timings.wednesdayClose },
+            { day: "Thursday", open: response.timings.thursdayOpen, close: response.timings.thursdayClose },
+            { day: "Friday", open: response.timings.fridayOpen, close: response.timings.fridayClose },
+            { day: "Saturday", open: response.timings.saturdayOpen, close: response.timings.saturdayClose },
+            { day: "Sunday", open: response.timings.sundayOpen, close: response.timings.sundayClose }
+          ].map((item, i) => (
+            <div
+              key={i}
+              className="flex justify-between py-3 border-b border-[rgba(140,80,40,0.15)] text-xs md:text-[14px]"
+            >
+              <span className="text-[#7A5C48] font-light">{item.day}</span>
+              <span className="text-[#3D1F0A] font-medium">
+                {item.open} – {item.close}
+              </span>
             </div>
-          </div>
-          <div className="bg-white rounded-2xl border border-[rgba(140,80,40,0.15)] overflow-hidden">
-            <div className="bg-[#C8502A] px-5 md:px-6 py-4 md:py-5 text-white font-['Playfair_Display',serif] text-base md:text-lg">Opening hours</div>
-            <div className="px-4 md:px-6">
-              {[
-                { day: "Monday", open: response.timings.mondayOpen, close: response.timings.mondayClose },
-                { day: "Tuesday", open: response.timings.tuesdayOpen, close: response.timings.tuesdayClose },
-                { day: "Wednesday", open: response.timings.wednesdayOpen, close: response.timings.wednesdayClose },
-                { day: "Thursday", open: response.timings.thursdayOpen, close: response.timings.thursdayClose },
-                { day: "Friday", open: response.timings.fridayOpen, close: response.timings.fridayClose },
-                { day: "Saturday", open: response.timings.saturdayOpen, close: response.timings.saturdayClose },
-                { day: "Sunday", open: response.timings.sundayOpen, close: response.timings.sundayClose }
-              ].map((item, i) => (
-                <div key={i} className="flex justify-between py-3 border-b border-[rgba(140,80,40,0.15)] text-xs md:text-[14px]">
-                  <span className="text-[#7A5C48] font-light">{item.day}</span>
-                  <span className="text-[#3D1F0A] font-medium">{item.open} – {item.close}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
-      </section>
+      </div>
+
+      {/* ADDRESS (NEW) */}
+      <div className="mt-6 rounded-2xl py-2 md:p-2">
+        <p className="text-[#7A5C48] text-sm md:text-[16px] font-light leading-relaxed">
+          {response.address.address}
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
 
       {/* REVIEWS SECTION */}
       <section id="reviews" className="px-4 md:px-12 py-16 md:py-24 bg-[#FAF7F2]">
@@ -320,68 +358,230 @@ const Chocolate = () => {
         </div>
       </section>
 
+
+
+
+
+
+
       {/* CONTACT SECTION */}
-      <section id="contact" className="px-4 md:px-12 py-16 md:py-24 bg-[#FDF4EF]">
-        <div className='flex flex-row gap-5 items-center'>
-          <p className='h-[2px] w-[20px] bg-[#b64826]' />
-          <p className='uppercase text-[#b74d2d] text-sm tracking-widest'>{response.address.tag}</p>
+<section id="contact" className="px-4 md:px-12 py-16 md:py-24 bg-[#FDF4EF]">
+  <div className='flex flex-row gap-5 items-center'>
+    <p className='h-[2px] w-[20px] bg-[#b64826]' />
+    <p className='uppercase text-[#b74d2d] text-sm tracking-widest'>
+      {response.address.tag}
+    </p>
+  </div>
+
+  <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl text-[#3D1F0A] mb-3 tracking-tight">
+    {response.address.heading}
+  </h2>
+
+  <p className="text-[#7A5C48] text-sm md:text-base max-w-md mb-8 md:mb-12 font-light">
+    {response.address.description}
+  </p>
+
+  <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-12 md:gap-16">
+    
+    {/* LEFT SIDE */}
+    <div className="space-y-5 md:space-y-7">
+      
+      {/* ADDRESS */}
+      <div className="flex gap-4">
+        <div className="w-8 h-8 md:w-10 md:h-10 bg-[#C8502A] rounded-lg flex items-center justify-center text-white text-base md:text-lg">📍</div>
+        <div>
+          <strong className="text-xs md:text-[14px] text-[#3D1F0A] block mb-1">Address</strong>
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(response.address.address)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs md:text-[14px] text-[#7A5C48] font-light hover:text-[#C8502A]"
+          >
+            {response.address.address}
+          </a>
         </div>
-        <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl text-[#3D1F0A] mb-3 tracking-tight">{response.address.heading}</h2>
-        <p className="text-[#7A5C48] text-sm md:text-base max-w-md mb-8 md:mb-12 font-light">{response.address.description}</p>
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-12 md:gap-16">
-          <div className="space-y-5 md:space-y-7">
-            <div className="flex gap-4">
-              <div className="w-8 h-8 md:w-10 md:h-10 bg-[#C8502A] rounded-lg flex items-center justify-center text-white text-base md:text-lg">📍</div>
-              <div><strong className="text-xs md:text-[14px] text-[#3D1F0A] block mb-1">Address</strong><p className="text-xs md:text-[14px] text-[#7A5C48] font-light">{response.address.address}</p></div>
-            </div>
-            <div className="flex gap-4">
-              <div className="w-8 h-8 md:w-10 md:h-10 bg-[#C8502A] rounded-lg flex items-center justify-center text-white text-base md:text-lg">📞</div>
-              <div><strong className="text-xs md:text-[14px] text-[#3D1F0A] block mb-1">Phone</strong><p className="text-xs md:text-[14px] text-[#7A5C48] font-light">{response.address.phone}</p></div>
-            </div>
-            <div className="flex gap-4">
-              <div className="w-8 h-8 md:w-10 md:h-10 bg-[#C8502A] rounded-lg flex items-center justify-center text-white text-base md:text-lg">📧</div>
-              <div><strong className="text-xs md:text-[14px] text-[#3D1F0A] block mb-1">Email</strong><p className="text-xs md:text-[14px] text-[#7A5C48] font-light">{response.address.email}</p></div>
-            </div>
-            <div className="flex gap-4">
-              <div className="w-8 h-8 md:w-10 md:h-10 bg-[#C8502A] rounded-lg flex items-center justify-center text-white text-base md:text-lg">📸</div>
-              <div><strong className="text-xs md:text-[14px] text-[#3D1F0A] block mb-1">Instagram</strong><p className="text-xs md:text-[14px] text-[#7A5C48] font-light">@{response.address.instagram.split('/').pop()}</p></div>
-            </div>
-          </div>
-          <div className="bg-white rounded-2xl p-6 md:p-9 border border-[rgba(140,80,40,0.15)]">
-            <div className="font-['Playfair_Display',serif] text-xl md:text-2xl text-[#3D1F0A] mb-4 md:mb-6">Send us a message</div>
-            <div className="space-y-3 md:space-y-4">
-              <div><label className="block text-[10px] md:text-[11px] font-medium text-[#7A5C48] uppercase tracking-wide mb-2">Your name</label><input type="text" className="w-full p-2 md:p-3 border-2 border-[rgba(140,80,40,0.15)] rounded-lg bg-[#FAF7F2] focus:border-[#C8502A] focus:bg-white outline-none transition text-sm" /></div>
-              <div><label className="block text-[10px] md:text-[11px] font-medium text-[#7A5C48] uppercase tracking-wide mb-2">Email address</label><input type="email" className="w-full p-2 md:p-3 border-2 border-[rgba(140,80,40,0.15)] rounded-lg bg-[#FAF7F2] focus:border-[#C8502A] focus:bg-white outline-none transition text-sm" /></div>
-              <div><label className="block text-[10px] md:text-[11px] font-medium text-[#7A5C48] uppercase tracking-wide mb-2">Enquiry type</label><select className="w-full p-2 md:p-3 border-2 border-[rgba(140,80,40,0.15)] rounded-lg bg-[#FAF7F2] focus:border-[#C8502A] focus:bg-white outline-none transition text-sm"><option>General enquiry</option><option>Birthday cake order</option><option>Corporate gifting</option></select></div>
-              <div><label className="block text-[10px] md:text-[11px] font-medium text-[#7A5C48] uppercase tracking-wide mb-2">Your message</label><textarea rows={3} className="w-full p-2 md:p-3 border-2 border-[rgba(140,80,40,0.15)] rounded-lg bg-[#FAF7F2] focus:border-[#C8502A] focus:bg-white outline-none transition text-sm"></textarea></div>
-              <button className="w-full bg-[#C8502A] text-white py-3 md:py-4 rounded-lg font-medium hover:bg-[#8B3418] transition text-sm md:text-base">Send message →</button>
-            </div>
-          </div>
+      </div>
+
+      {/* PHONE */}
+      <div className="flex gap-4">
+        <div className="w-8 h-8 md:w-10 md:h-10 bg-[#C8502A] rounded-lg flex items-center justify-center text-white text-base md:text-lg">📞</div>
+        <div>
+          <strong className="text-xs md:text-[14px] text-[#3D1F0A] block mb-1">Phone</strong>
+          <a
+            href={`tel:${response.address.phone}`}
+            className="text-xs md:text-[14px] text-[#7A5C48] font-light hover:text-[#C8502A]"
+          >
+            {response.address.phone}
+          </a>
         </div>
-      </section>
+      </div>
+
+      {/* EMAIL */}
+      <div className="flex gap-4">
+        <div className="w-8 h-8 md:w-10 md:h-10 bg-[#C8502A] rounded-lg flex items-center justify-center text-white text-base md:text-lg">📧</div>
+        <div>
+          <strong className="text-xs md:text-[14px] text-[#3D1F0A] block mb-1">Email</strong>
+          <a
+          href={`https://mail.google.com/mail/?view=cm&to=${response.address.email}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs md:text-[14px] text-[#7A5C48] font-light hover:text-[#C8502A] underline"
+        >
+          {response.address.email}
+        </a>
+        </div>
+      </div>
+
+      {/* INSTAGRAM */}
+      <div className="flex gap-4">
+        <div className="w-8 h-8 md:w-10 md:h-10 bg-[#C8502A] rounded-lg flex items-center justify-center text-white text-base md:text-lg">📸</div>
+        <div>
+          <strong className="text-xs md:text-[14px] text-[#3D1F0A] block mb-1">Instagram</strong>
+          <a
+            href={response.address.instagram}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs md:text-[14px] text-[#7A5C48] font-light hover:text-[#C8502A]"
+          >
+            @{response.address.instagram.split('/').pop()}
+          </a>
+        </div>
+      </div>
+    </div>
+
+    {/* RIGHT SIDE FORM */}
+    <div className="bg-white rounded-2xl p-6 md:p-9 border border-[rgba(140,80,40,0.15)]">
+      <div className="font-['Playfair_Display',serif] text-xl md:text-2xl text-[#3D1F0A] mb-4 md:mb-6">
+        Send us a message
+      </div>
+
+      <div className="space-y-3 md:space-y-4">
+        <div>
+          <label className="block text-[10px] md:text-[11px] font-medium text-[#7A5C48] uppercase tracking-wide mb-2">
+            Your name
+          </label>
+          <input type="text" className="w-full p-2 md:p-3 border-2 border-[rgba(140,80,40,0.15)] rounded-lg bg-[#FAF7F2] focus:border-[#C8502A] focus:bg-white outline-none transition text-sm" />
+        </div>
+
+        <div>
+          <label className="block text-[10px] md:text-[11px] font-medium text-[#7A5C48] uppercase tracking-wide mb-2">
+            Email address
+          </label>
+          <input type="email" className="w-full p-2 md:p-3 border-2 border-[rgba(140,80,40,0.15)] rounded-lg bg-[#FAF7F2] focus:border-[#C8502A] focus:bg-white outline-none transition text-sm" />
+        </div>
+
+        <div>
+          <label className="block text-[10px] md:text-[11px] font-medium text-[#7A5C48] uppercase tracking-wide mb-2">
+            Enquiry type
+          </label>
+          <select className="w-full p-2 md:p-3 border-2 border-[rgba(140,80,40,0.15)] rounded-lg bg-[#FAF7F2] focus:border-[#C8502A] focus:bg-white outline-none transition text-sm">
+            <option>General enquiry</option>
+            <option>Birthday cake order</option>
+            <option>Corporate gifting</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-[10px] md:text-[11px] font-medium text-[#7A5C48] uppercase tracking-wide mb-2">
+            Your message
+          </label>
+          <textarea rows={3} className="w-full p-2 md:p-3 border-2 border-[rgba(140,80,40,0.15)] rounded-lg bg-[#FAF7F2] focus:border-[#C8502A] focus:bg-white outline-none transition text-sm"></textarea>
+        </div>
+
+        <button className="w-full bg-[#C8502A] text-white py-3 md:py-4 rounded-lg font-medium hover:bg-[#8B3418] transition text-sm md:text-base">
+          Send message →
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+
 
       {/* FOOTER */}
-      <footer className="bg-[#3D1F0A] px-4 md:px-12 py-10 md:py-12 grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
-        <div>
-          <div className="font-['Playfair_Display',serif] text-xl md:text-2xl text-[#F5E6DC] mb-2">{response.hero.name}</div>
-          <div className="text-[10px] md:text-[12px] text-white/40 tracking-wider uppercase font-light">{response.hero.description}</div>
-        </div>
-        <div>
-          <div className="text-[10px] md:text-[11px] font-medium tracking-wider uppercase text-[#C8502A] mb-4">Visit us</div>
-          <ul className="space-y-2">
-            <li className="text-xs md:text-[14px] text-white/50 font-light">{response.address.address}</li>
-            <li className="text-xs md:text-[14px] text-white/50 font-light">{response.address.phone}</li>
-            <li className="text-xs md:text-[14px] text-white/50 font-light">{response.address.email}</li>
-          </ul>
-        </div>
-        <div>
-          <div className="text-[10px] md:text-[11px] font-medium tracking-wider uppercase text-[#C8502A] mb-4">Follow us</div>
-          <ul className="space-y-2">
-            <li className="text-xs md:text-[14px] text-white/50 font-light">Instagram: @sweetshop</li>
-            <li className="text-xs md:text-[14px] text-white/50 font-light">Facebook: /sweetshop</li>
-          </ul>
-        </div>
-      </footer>
+     <footer className="bg-[#3D1F0A] px-4 md:px-12 py-10 md:py-12 grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
+  
+  {/* BRAND */}
+  <div>
+    <div className="font-['Playfair_Display',serif] text-xl md:text-2xl text-[#F5E6DC] mb-2">
+      {response.hero.name}
+    </div>
+    <div className="text-[10px] md:text-[12px] text-white/40 tracking-wider uppercase font-light">
+      {response.hero.description}
+    </div>
+  </div>
+
+  {/* VISIT US */}
+  <div>
+    <div className="text-[10px] md:text-[11px] font-medium tracking-wider uppercase text-[#C8502A] mb-4">
+      Visit us
+    </div>
+
+    <ul className="space-y-2">
+      
+      {/* ADDRESS → GOOGLE MAPS */}
+      <li>
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(response.address.address)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs md:text-[14px] text-white/50 font-light hover:text-white"
+        >
+          {response.address.address}
+        </a>
+      </li>
+
+      {/* PHONE → CALL */}
+      <li>
+        <a
+          href={`tel:${response.address.phone}`}
+          className="text-xs md:text-[14px] text-white/50 font-light hover:text-white"
+        >
+          {response.address.phone}
+        </a>
+      </li>
+
+      {/* EMAIL → GMAIL (reliable) */}
+      <li>
+        <a
+          href={`https://mail.google.com/mail/?view=cm&to=${response.address.email}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs md:text-[14px] text-white/50 font-light hover:text-white"
+        >
+          {response.address.email}
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  {/* SOCIAL */}
+  <div>
+    <div className="text-[10px] md:text-[11px] font-medium tracking-wider uppercase text-[#C8502A] mb-4">
+      Follow us
+    </div>
+
+    <ul className="space-y-2">
+      
+      {/* INSTAGRAM */}
+      <li>
+        <a
+          href={response.address.instagram}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs md:text-[14px] text-white/50 font-light hover:text-white"
+        >
+          Instagram: @{response.address.instagram.split('/').pop()}
+        </a>
+      </li>
+
+    </ul>
+  </div>
+</footer>
       <div className="bg-[#3D1F0A] px-4 md:px-12 py-3 md:py-4 border-t border-white/10 text-center text-[10px] md:text-[12px] text-white/30 font-light">
         {response.footer.copyright}
       </div>

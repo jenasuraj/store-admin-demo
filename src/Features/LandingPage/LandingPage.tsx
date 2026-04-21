@@ -58,7 +58,7 @@ const LandingPage = () => {
             </h1>
             <p className="mt-2">{selectedTemplate.description}</p>
           </div>
-          <DynamicForm template={selectedTemplate} />
+          <DynamicForm template={selectedTemplate} clientAdmin={true}/>
         </div>
       ) : (
         <div className="flex items-center justify-center h-full">
