@@ -195,14 +195,16 @@ const Chocolate = () => {
     <p className="text-[#cd3d11]  text-4xl">4.8★</p>
     <p className="text-[#7A5C48] text-sm">Google rating</p>
   </div>
+
+    <div>
+    <p className="text-[#cd3d11] text-4xl">7</p>
+    <p className="text-[#7A5C48] text-sm">Days Open every day</p>
+  </div>
   <div>
     <p className="text-[#cd3d11] text-4xl">66+</p>
     <p className="text-[#7A5C48] text-sm">5-star reviews</p>
   </div>
-  <div>
-    <p className="text-[#cd3d11] text-4xl">7</p>
-    <p className="text-[#7A5C48] text-sm">Days Open every day</p>
-  </div>
+
 </div>
 
   </div>
@@ -435,7 +437,7 @@ const Chocolate = () => {
           "
         </div>
 
-        <div className="text-xs md:text-[14px] text-[#7A5C48] italic leading-relaxed font-light mb-4">
+        <div className="text-sm md:text-[16px] text-[#7A5C48] italic leading-relaxed font-light mb-4">
           {review.text}
         </div>
 

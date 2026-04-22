@@ -211,56 +211,59 @@ const MobileAccessoriesStore: React.FC = () => {
       `}</style>
 
       {/* ========== HERO SECTION ========== */}
-      <section className="bg-white">
-        <div className="max-w-7xl mx-auto px-5 md:px-8 py-12 md:py-20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="order-2 lg:order-1">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="h-px w-8 bg-blue-400"></div>
-                <span className="uppercase text-blue-600 text-xs font-semibold tracking-wider">{dummyResponse.hero.tag}</span>
-              </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 tracking-tight leading-tight mb-6">
-                {dummyResponse.hero.heading}
-              </h1>
-              <p className="text-gray-500 text-base md:text-lg max-w-md mb-8 leading-relaxed">
-                {dummyResponse.hero.description}
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <a href="#products" className="bg-blue-600 text-white px-6 py-3 rounded-full font-medium hover:bg-blue-700 transition shadow-sm hover:shadow-md">
-                  Shop now →
-                </a>
-                <a href="#contact" className="border border-gray-300 text-gray-700 px-6 py-3 rounded-full font-medium hover:border-blue-400 hover:text-blue-600 transition">
-                  Contact team
-                </a>
-              </div>
-              <div className="grid grid-cols-3 gap-4 max-w-md mt-12 pt-4 border-t border-gray-100">
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">4.9★</p>
-                  <p className="text-gray-500 text-xs">Google rating</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">20k+</p>
-                  <p className="text-gray-500 text-xs">Happy customers</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">Free</p>
-                  <p className="text-gray-500 text-xs">UK delivery over £30</p>
-                </div>
-              </div>
-            </div>
-            <div className="order-1 lg:order-2">
-              <div className="rounded-sm relative overflow-hidden shadow-2xl max-h-[550px]">
-                <img 
-                  src={dummyResponse.hero.image} 
-                  alt="Mobile accessories showcase"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
-              </div>
-            </div>
+   <section className="bg-white">
+  <div className="max-w-7xl mx-auto px-5 md:px-8 py-12 md:py-20">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      {/* Content - appears first on mobile, left on desktop */}
+      <div className="order-1 lg:order-1">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-px w-8 bg-blue-400"></div>
+          <span className="uppercase text-blue-600 text-xs font-semibold tracking-wider">{dummyResponse.hero.tag}</span>
+        </div>
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 tracking-tight leading-tight mb-6">
+          {dummyResponse.hero.heading}
+        </h1>
+        <p className="text-gray-500 text-base md:text-lg max-w-md mb-8 leading-relaxed">
+          {dummyResponse.hero.description}
+        </p>
+        <div className="flex flex-wrap gap-4">
+          <a href="#products" className="bg-blue-600 text-white px-6 py-3 rounded-full font-medium hover:bg-blue-700 transition shadow-sm hover:shadow-md">
+            Shop now →
+          </a>
+          <a href="#contact" className="border border-gray-300 text-gray-700 px-6 py-3 rounded-full font-medium hover:border-blue-400 hover:text-blue-600 transition">
+            Contact team
+          </a>
+        </div>
+        <div className="grid grid-cols-3 gap-4 max-w-md mt-12 pt-4 border-t border-gray-100">
+          <div>
+            <p className="text-2xl font-bold text-gray-900">4.9★</p>
+            <p className="text-gray-500 text-xs">Google rating</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-gray-900">20k+</p>
+            <p className="text-gray-500 text-xs">Happy customers</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-gray-900">Free</p>
+            <p className="text-gray-500 text-xs">UK delivery over £30</p>
           </div>
         </div>
-      </section>
+      </div>
+
+      {/* Image - appears second on mobile, right on desktop */}
+      <div className="order-2 lg:order-2">
+        <div className="rounded-sm relative overflow-hidden shadow-2xl max-h-[550px]">
+          <img 
+            src={dummyResponse.hero.image} 
+            alt="Mobile accessories showcase"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
       {/* Marquee highlights strip */}
       <div className="w-full bg-gray-50 py-4 overflow-hidden marquee-container border-y border-gray-100">
