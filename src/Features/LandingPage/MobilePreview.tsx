@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Phone, Mail, Instagram, Facebook, ChefHat, Utensils, Coffee, Wine } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FormValues } from "./LandingPage";
+//import { FormValues } from "./LandingPage";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { BASE_URL } from "@/lib/constants";
@@ -47,12 +47,12 @@ interface PreviewData {
 }
 
 interface MobilePreviewProps {
-  data: FormValues;
+  //data: FormValues;
 }
 
 
 
-export default function MobilePreview({ data }: MobilePreviewProps) {
+export default function MobilePreview({ data }: any) {
     const modifiedIframe = data.footerInfo.contact?.locationIframe?.replace(/width="[^"]*"/, 'width="400"')  // Replace any width with 400
   ?.replace(/height="[^"]*"/, 'height="300"'); // Replace any height with 300
 
