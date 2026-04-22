@@ -19,7 +19,7 @@ const Chocolate = () => {
       description: "Freshly baked pastries, artisan coffee, and authentic savoury treats — handmade every morning with love, tradition, and imported ingredients straight from Portugal.",
       image: "hero.jpg",
       tag: "Bromley's Portuguese & Brazilian patisserie",
-      name: "Sweet Paradise",
+      name: "M Chocolate",
       highlights: [
         "Freshly baked daily",
         "Imported ingredients",
@@ -50,16 +50,16 @@ const Chocolate = () => {
     reviews: {
       tag: "WHAT PEOPLE SAY",
       heading: "Loved by our neighbours",
-      description: "Loved by thousands of happy customers Loved by thousands of happy customers Loved by thousands of happy customers Loved by thousands of happy customers "
+      description: ""
     },
     address: {
       tag: "GET IN TOUCH",
       heading: "Visit Us Or Place an Order",
       description: "Whether you're popping in for a coffee, planning a birthday cake, or need catering for an event — we'd love to hear from you.",
-      address: "Rourkela, Odisha, India",
-      phone: "9876543210",
+      address: "9 Homesdale Road, Bromley BR2 9JQ 2 min walk from Bromley South station",
+      phone: "+44 7999 381147",
       email: "shop@gmail.com",
-      instagram: "https://instagram.com/shop"
+      instagram: "https://instagram.com/marias_chocolate"
     },
     footer: {
       footerText: "Thank you for visiting our store",
@@ -69,13 +69,13 @@ const Chocolate = () => {
       twitter: "https://twitter.com/shop"
     },
     timings: {
-      mondayOpen: "16:00", mondayClose: "21:00",
-      tuesdayOpen: "16:00", tuesdayClose: "21:00",
-      wednesdayOpen: "16:00", wednesdayClose: "21:00",
-      thursdayOpen: "16:00", thursdayClose: "21:00",
-      fridayOpen: "16:00", fridayClose: "22:00",
-      saturdayOpen: "14:00", saturdayClose: "22:00",
-      sundayOpen: "14:00", sundayClose: "20:00"
+      mondayOpen: "6:00 am", mondayClose: "5:00 pm",
+      tuesdayOpen: "6:00 am", tuesdayClose: "5:00 pm",
+      wednesdayOpen: "6:00 am", wednesdayClose: "5:00 pm",
+      thursdayOpen: "6:00 am", thursdayClose: "5:00 pm",
+      fridayOpen: "6:00 am", fridayClose: "5:00 pm",
+      saturdayOpen: "6:00 am", saturdayClose: "5:00 pm",
+      sundayOpen: "7:00 am", sundayClose: "4:00 pm"
     }
   }
 
@@ -126,9 +126,9 @@ const Chocolate = () => {
   }
 
   const reviews = [
-    { text: "Absolutely the best chocolates I've ever had. The quality is unmatched.", author: "Priya S.", stars: 5 },
-    { text: "Ordered the gift box for my wife's birthday. She loved it!", author: "Rahul M.", stars: 5 },
-    { text: "Their hot chocolate is incredible. Will definitely order again.", author: "Neha K.", stars: 5 }
+    { text: "Absolutely the best chocolates I've ever had. The quality is unmatched.", author: "Google Review", stars: 5 },
+    { text: "Ordered the gift box for my wife's birthday. She loved it!", author: "Google Review", stars: 5 },
+    { text: "Their hot chocolate is incredible. Will definitely order again.", author: "Google Review", stars: 5 }
   ]
 
   return (
@@ -151,52 +151,96 @@ const Chocolate = () => {
         }
       `}</style>
 
-      {/* HERO SECTION */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] min-h-[88vh] bg-[#FAF7F2]">
-        <div className="px-4 md:px-12 py-12 md:py-20 lg:py-24 flex flex-col justify-center">
-          <div className='flex flex-row gap-5 items-center'>
-            <p className='h-[2px] w-[20px] bg-[#b64826]' />
-            <p className='uppercase text-[#b74d2d] text-sm tracking-widest'>{response.hero.tag}</p>
-          </div>
-          <h1 className="font-['Playfair_Display',serif] text-4xl md:text-5xl lg:text-6xl text-[#3D1F0A] mb-6 leading-tight tracking-tight">
-            {response.hero.heading}
-          </h1>
-          <p className="text-[#7A5C48] text-base md:text-lg leading-relaxed max-w-md mb-8 md:mb-10 font-light">
-            {response.hero.description}
-          </p>
-          <div className="flex gap-4 flex-wrap">
-            <a href="#menu" className="bg-cyan-500 text-white px-5 md:px-7 py-3 rounded-lg font-medium hover:bg-cyan-800 transition text-center">🛵 Order on Deliverdoo</a>
-            <a href="#contact" className="border-2 border-[#C8502A] text-[#8B3418] px-5 md:px-7 py-3 rounded-lg font-medium hover:bg-[#FDF4EF] transition text-center">Contact us</a>
-          </div>
-        </div>
-        <div className="bg-[#F5E6DC] flex items-center justify-center p-6 md:p-12">
-          <div className="bg-[#FDF4EF] rounded-2xl border border-[rgba(140,80,40,0.15)] w-full aspect-[4/5] flex items-center justify-center">
-            <div className="text-center">
-              <span className="text-6xl md:text-8xl block mb-4">🍫</span>
-              <div className="font-['Playfair_Display',serif] text-[#8B3418] italic">Handcrafted<br />with love</div>
-            </div>
-          </div>
+
+{/* HERO SECTION */}
+<div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] min-h-[88vh] bg-[#FAF7F2]">
+  <div className="px-4 md:px-12 py-12 md:py-20 lg:py-24 flex flex-col justify-center">
+    
+    <div className='flex flex-row gap-5 items-center mb-5'>
+      <p className='h-[2px] w-[20px] bg-[#b64826]' />
+      <p className='uppercase text-[#cd3d11] font-[590] text-sm tracking-widest'>
+        {response.hero.tag}
+      </p>
+    </div>
+
+    <h1 className="font-['Playfair_Display',serif] text-4xl md:text-5xl font-semibold lg:text-6xl text-[#3D1F0A] mb-6 leading-tight tracking-tight">
+      {response.hero.heading.split("Lisbon").map((part, index, arr) => (
+        <>
+          {part}
+          {index < arr.length - 1 && (
+            <span className="text-[#cd3d11] italic">Lisbon</span>
+          )}
+        </>
+      ))}
+    </h1>
+
+    <p className="text-[#7A5C48] text-base md:text-lg leading-relaxed max-w-md mb-8 md:mb-10 font-light">
+      {response.hero.description}
+    </p>
+
+    <div className="flex gap-4 flex-wrap mb-8">
+      <a href="#menu" className="bg-cyan-500 text-white px-5 md:px-7 py-3 rounded-lg font-medium hover:bg-cyan-800 transition text-center">
+        🛵 Order on Deliveroo
+      </a>
+      <a href="#contact" className="border-2 border-[#C8502A] text-[#8B3418] px-5 md:px-7 py-3 rounded-lg font-medium hover:bg-[#FDF4EF] transition text-center">
+        Contact us
+      </a>
+    </div>
+
+
+
+{/* 🔥 STATS SECTION */}
+<div className="grid grid-cols-3 sm:grid-cols-4 gap-6 max-w-md pt-6  font-['Playfair_Display',serif]">
+  <div>
+    <p className="text-[#cd3d11]  text-4xl">4.8★</p>
+    <p className="text-[#7A5C48] text-sm">Google rating</p>
+  </div>
+  <div>
+    <p className="text-[#cd3d11] text-4xl">66+</p>
+    <p className="text-[#7A5C48] text-sm">5-star reviews</p>
+  </div>
+  <div>
+    <p className="text-[#cd3d11] text-4xl">7</p>
+    <p className="text-[#7A5C48] text-sm">Days Open every day</p>
+  </div>
+</div>
+
+  </div>
+
+  <div className="bg-[#F5E6DC] flex items-center justify-center p-6 md:p-12">
+    <div className="bg-[#FDF4EF] rounded-2xl border border-[rgba(140,80,40,0.15)] w-full aspect-[4/5] flex items-center justify-center">
+      <div className="text-center">
+        <span className="text-9xl md:text-9xl block mb-4">🍫</span>
+        <div className="font-['Playfair_Display',serif] text-[#8B3418] italic">
+          Handcrafted<br />with love
         </div>
       </div>
+    </div>
+  </div>
+</div>
 
       {/* HIGHLIGHTS - Infinite sliding marquee */}
-      <div className="w-full bg-[#b64826] py-4 md:py-5 overflow-hidden marquee-container">
+      <div className="w-full bg-[#912f11] py-4 md:py-5 overflow-hidden marquee-container">
         <div className="animate-marquee whitespace-nowrap">
           {[...response.hero.highlights, ...response.hero.highlights].map((item, index) => (
-            <span key={index} className="font-['Playfair_Display',serif] text-[#F5E6DC] text-sm md:text-base mx-6 md:mx-10 inline-block">
-              {item}
-            </span>
+            <span
+            key={index}
+            className="text-[#F5E6DC] text-sm md:text-base mx-6 md:mx-10 inline-flex items-center gap-2"
+          >
+            <span className="text-lg">•</span>
+            {item}
+          </span>
           ))}
         </div>
       </div>
 
       {/* MENU SECTION */}
       <section id="menu" className="px-4 md:px-12 py-16 md:py-24 bg-[#FAF7F2]">
-        <div className='flex flex-row gap-5 items-center'>
+        <div className='flex flex-row gap-5 items-center mb-5'>
           <p className='h-[2px] w-[20px] bg-[#b64826]' />
-          <p className='uppercase text-[#b74d2d] text-sm tracking-widest'>{response.menu.tag}</p>
+          <p className='uppercase text-[#cd3d11] font-[590] text-sm tracking-widest'>{response.menu.tag}</p>
         </div>
-        <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl text-[#3D1F0A] font-bold mb-3 tracking-tight">{response.menu.heading}</h2>
+        <h2 className="font-['Playfair_Display',serif] text-4xl md:text-5xl text-[#3D1F0A] font-bold mb-3 tracking-tight">{response.menu.heading}</h2>
         <p className="text-[#7A5C48] text-sm md:text-base max-w-md mb-8 md:mb-12 font-light">{response.menu.description}</p>
 
         {/* TABS - overflow auto no wrap */}
@@ -224,6 +268,8 @@ const Chocolate = () => {
 
 
         
+
+
 
 {/* MENU GRID - responsive: 1/2/3 cols */}
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
@@ -261,14 +307,14 @@ const Chocolate = () => {
 
       {/* OUR STORY + HOURS */}
  <section id="story" className="px-4 md:px-12 py-16 md:py-24 bg-[#FDF4EF]">
-  <div className='flex flex-row gap-5 items-center'>
+  <div className='flex flex-row gap-5 items-center mb-5'>
     <p className='h-[2px] w-[20px] bg-[#b64826]' />
-    <p className='uppercase text-[#b74d2d] text-sm tracking-widest'>
+    <p className='uppercase text-[#cd3d11] font-[590]  text-sm tracking-widest'>
       {response.ourStory.tag}
     </p>
   </div>
 
-  <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl text-[#3D1F0A] mb-3 tracking-tight">
+  <h2 className="font-['Playfair_Display',serif] font-bold text-4xl md:text-5xl text-[#3D1F0A] mb-3 tracking-tight">
     {response.ourStory.heading}
   </h2>
 
@@ -284,7 +330,7 @@ const Chocolate = () => {
         {(response.ourStory?.highlights || []).map((item, i) => (
           <span
             key={i}
-            className="px-3 py-1 text-xs bg-[#F3E2D8] text-[#B74D2D] rounded-full border border-[rgba(183,77,45,0.2)]"
+            className="py-2 px-4 text-sm bg-white text-[#7A5C48] rounded-sm border border-[rgba(183,77,45,0.2)]"
           >
             {item}
           </span>
@@ -324,8 +370,9 @@ const Chocolate = () => {
       </div>
 
       {/* ADDRESS (NEW) */}
-      <div className="mt-6 rounded-2xl py-2 md:p-2">
-        <p className="text-[#7A5C48] text-sm md:text-[16px] font-light leading-relaxed">
+      <div className="mt-6 rounded-2xl py-2 md:p-2 flex flex-col">
+        <p className='uppercase text-[#cd3d11] font-[590]  text-sm tracking-widest'>Find Us</p>
+        <p className="text-[#7A5C48] text-sm md:text-[16px] font-light w-1/2 leading-relaxed">
           {response.address.address}
         </p>
       </div>
@@ -337,26 +384,76 @@ const Chocolate = () => {
 
 
       {/* REVIEWS SECTION */}
-      <section id="reviews" className="px-4 md:px-12 py-16 md:py-24 bg-[#FAF7F2]">
-        <div className='flex flex-row gap-5 items-center'>
-          <p className='h-[2px] w-[20px] bg-[#b64826]' />
-          <p className='uppercase text-[#b74d2d] text-sm tracking-widest'>{response.reviews.tag}</p>
+
+
+<section id="reviews" className="px-4 md:px-12 py-16 md:py-24 bg-[#FAF7F2]">
+
+  {/* TOP SECTION (LEFT + RIGHT) */}
+  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-10 md:mb-14 gap-8">
+
+    {/* LEFT */}
+    <div>
+      <div className='flex flex-row gap-5 items-center mb-5'>
+        <p className='h-[2px] w-[20px] bg-[#b64826]' />
+        <p className='uppercase text-[#cd3d11] font-[590] text-sm tracking-widest'>
+          {response.reviews.tag}
+        </p>
+      </div>
+
+      <h2 className="font-['Playfair_Display',serif] text-4xl md:text-5xl font-bold text-[#3D1F0A] mb-3 tracking-tight">
+        {response.reviews.heading}
+      </h2>
+
+      <p className="text-[#7A5C48] text-sm md:text-base max-w-md font-light">
+        {response.reviews.description}
+      </p>
+    </div>
+
+    {/* RIGHT (RATING CARD) */}
+    <div className=" px-10 py-8 rounded-xl text-center min-w-[240px] ">
+      <p className="text-6xl font-['Playfair_Display',serif] text-[#8B3418] mb-2">
+        4.8
+      </p>
+
+      <div className="text-[#C9973A] text-lg tracking-tight mb-2">
+        ★★★★★
+      </div>
+
+      <p className="text-[#7A5C48] text-sm">
+        Based on 66 Google reviews
+      </p>
+    </div>
+
+  </div>
+
+  {/* REVIEWS GRID */}
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+    {reviews.map((review, idx) => (
+      <div key={idx} className="bg-white border border-[rgba(140,80,40,0.15)] rounded-xl p-5 md:p-6">
+        
+        <div className="text-3xl md:text-4xl text-[#F5E6DC] font-['Playfair_Display',serif] leading-none mb-2">
+          "
         </div>
-        <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl text-[#3D1F0A] mb-3 tracking-tight">{response.reviews.heading}</h2>
-        <p className="text-[#7A5C48] text-sm md:text-base max-w-md mb-8 md:mb-12 font-light">{response.reviews.description}</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-          {reviews.map((review, idx) => (
-            <div key={idx} className="bg-white border border-[rgba(140,80,40,0.15)] rounded-xl p-5 md:p-6">
-              <div className="text-3xl md:text-4xl text-[#F5E6DC] font-['Playfair_Display',serif] leading-none mb-2">"</div>
-              <div className="text-xs md:text-[14px] text-[#7A5C48] italic leading-relaxed font-light mb-4">{review.text}</div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs md:text-[13px] font-medium text-[#3D1F0A]">{review.author}</span>
-                <span className="text-[#C9973A] text-xs md:text-[13px]">{"★".repeat(review.stars)}</span>
-              </div>
-            </div>
-          ))}
+
+        <div className="text-xs md:text-[14px] text-[#7A5C48] italic leading-relaxed font-light mb-4">
+          {review.text}
         </div>
-      </section>
+
+        <div className="flex justify-between items-center">
+          <span className="text-xs md:text-[13px] font-medium text-[#3D1F0A]">
+            {review.author}
+          </span>
+
+          <span className="text-[#C9973A] text-xs md:text-[13px]">
+            {"★".repeat(review.stars)}
+          </span>
+        </div>
+
+      </div>
+    ))}
+  </div>
+
+</section>
 
 
 
@@ -366,14 +463,14 @@ const Chocolate = () => {
 
       {/* CONTACT SECTION */}
 <section id="contact" className="px-4 md:px-12 py-16 md:py-24 bg-[#FDF4EF]">
-  <div className='flex flex-row gap-5 items-center'>
+  <div className='flex flex-row gap-5 items-center mb-5'>
     <p className='h-[2px] w-[20px] bg-[#b64826]' />
-    <p className='uppercase text-[#b74d2d] text-sm tracking-widest'>
+    <p className='uppercase text-[#cd3d11] font-[590] text-sm  tracking-widest'>
       {response.address.tag}
     </p>
   </div>
 
-  <h2 className="font-['Playfair_Display',serif] text-3xl md:text-4xl text-[#3D1F0A] mb-3 tracking-tight">
+  <h2 className="font-['Playfair_Display',serif] text-4xl md:text-5xl font-bold text-[#3D1F0A] mb-3 tracking-tight">
     {response.address.heading}
   </h2>
 
