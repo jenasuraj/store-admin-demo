@@ -22,7 +22,7 @@ import LedgerViews from "./pages/ledger-view";
 import Chocolate from "./Features/template-manager/Template";
 import Form from "./Features/template-manager/Form";
 import TemplateManager from "./Features/template-manager/TemplateManager";
-
+import MobileAccessories from "./Features/template-manager/Mobile";
 
 import OracleLoginPage from "./Features/bot-poc/auth/OracleLogin";
 import PennantLoginPage from "./Features/bot-poc/auth/PennantLogin";
@@ -82,6 +82,10 @@ function App() {
         {
           path: "/visual",
           element: <Chocolate />,
+        },
+        {
+          path: "/mobile",
+          element: <MobileAccessories/>,
         },
         {
           path: "/template-manager",
