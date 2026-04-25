@@ -37,6 +37,9 @@ import TaxInvoiceForm from "./Features/bot-poc/invoice/TaxInvoiceForm";
 import CreateTransactionScreen from "./Features/bot-poc/transactions/transaction-entry";
 import BankLoginPage from "./Features/bot-poc/auth/bank-login";
 import AutobotNewHomePage from "./Features/Home/autobot-home-new";
+import MobileAccessoriesStore2 from "./Features/template-manager/Mobile2";
+
+
 
 axios.interceptors.request.use(
   function (config) {
@@ -86,6 +89,10 @@ function App() {
         {
           path: "/mobile",
           element: <MobileAccessories/>,
+        },
+        {
+          path: "/mobile2",
+          element: <MobileAccessoriesStore2/>,
         },
         {
           path: "/template-manager",
